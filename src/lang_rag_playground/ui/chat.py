@@ -154,7 +154,11 @@ async def respond(
                 if isinstance(update, dict):
                     accumulated_state.update(update)
 
-                step_msg = format_node_step(node_name, update_dict)
+                step_input = {
+                    **({k: accumulated_state[k] for k in ("retry_count",) if k in accumulated_state}),
+                    **update_dict,
+                }
+                step_msg = format_node_step(node_name, step_input)
                 if step_msg is not None:
                     history.append(step_msg)
 
@@ -180,7 +184,7 @@ async def respond(
             list(history),
             render(services.mermaid_diagram, active_node=None, visited=visited),
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         history.append(gr.ChatMessage(role="assistant", content=f"❌ Bir hata oluştu: {exc}"))
         yield (
             list(history),

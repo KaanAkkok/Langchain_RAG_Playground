@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+
 import pytest
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage
@@ -108,3 +109,30 @@ async def test_respond_handles_exception_and_marks_failed_node():
     final_history, final_diagram = outputs[-1]
     assert "Bir hata oluştu: LLM zaman aşımı" in final_history[-1].content
     assert "class input_guardrails failed;" in final_diagram
+
+
+@pytest.mark.asyncio
+async def test_respond_propagates_retry_count_from_judge_to_subsequent_assistant_step():
+    events = [
+        {"assistant": {"generation": "İlk taslak", "reranked_documents": [], "cited_documents": []}},
+        {"judge": {"judge_passed": False, "judge_blocked": False, "feedback": "Kaynak eksik", "retry_count": 1}},
+        {"assistant": {"generation": "İkinci taslak", "reranked_documents": [], "cited_documents": []}},
+        {"judge": {"judge_passed": True, "judge_blocked": False, "feedback": None, "retry_count": 1}},
+        {"output_guardrails": {"generation": "İkinci taslak", "messages": [AIMessage(content="İkinci taslak")]}},
+    ]
+
+    async def fake_astream(*args, **kwargs):
+        for ev in events:
+            yield ev
+
+    services = SimpleNamespace(
+        graph=SimpleNamespace(astream=fake_astream),
+        mermaid_diagram="graph TD;\n\tassistant --> judge;",
+    )
+
+    outputs = [item async for item in respond("Soru", [], "u1", "t1", services)]
+    final_history, _ = outputs[-1]
+    titles = [m.metadata.get("title") for m in final_history if getattr(m, "metadata", None)]
+    assert "✍️ Cevap yazıldı" in titles
+    assert "✍️ Cevap yeniden yazıldı" in titles
+
