@@ -1,7 +1,7 @@
 services:
   qdrant:
     image: qdrant/qdrant
-    container_name: rag_qdrant
+    container_name: lang_rag_qdrant
     restart: unless-stopped
     environment:
       - QDRANT__LOG_LEVEL=${QDRANT_LOG_LEVEL:-WARN}
