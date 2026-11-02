@@ -1,6 +1,3 @@
-# NOTE: Used only by the workflow graph (`graphs/graph.py::workflow_graph`).
-# The agentic graph reranks inside the `search_documents` tool instead.
-# Both share the same logic in `retrieval/reranking.py`.
 from langchain_core.runnables import Runnable
 
 from lang_rag_playground.core.settings import settings

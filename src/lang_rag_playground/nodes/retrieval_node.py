@@ -1,6 +1,3 @@
-# NOTE: Used only by the workflow graph (`graphs/graph.py::workflow_graph`).
-# The agentic graph searches inside the `search_documents` tool (`tools/search_tools.py`),
-# where the agent picks the query itself.
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.models.agent_state_model import AgentState
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
