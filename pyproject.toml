@@ -1,0 +1,48 @@
+[project]
+name = "lang-rag-playground"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "black>=26.10.1",
+    "docling-slim[format-pdf-docling,models-local]>=2.142.1",
+    "fastembed>=0.9.1",
+    "gradio>=6.31.0",
+    "langchain>=1.4.7",
+    "langchain-experimental>=0.4.2",
+    "langchain-google-genai>=4.4.2",
+    "langchain-qdrant>=1.1.0",
+    "langgraph>=1.2.17",
+    "pdfplumber>=0.11.10",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.1",
+    "qdrant-client>=1.20.0",
+    "rtree>=1.4.1",
+    "ruff>=0.17.3",
+    "torch>=2.2.2",
+    "torchvision>=0.29.1",
+]
+
+[project.scripts]
+lang-rag-playground = "lang_rag_playground:main"
+
+[build-system]
+requires = ["uv_build>=0.12.2,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+manimations = { workspace = true }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
