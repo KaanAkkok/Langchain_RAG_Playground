@@ -19,7 +19,10 @@ def make_search_documents_tool(
     top_k: int = settings.TOP_K_CANDIDATES,
     min_score: float = settings.MIN_RERANK_SCORE,
 ):
-    not_found = "Bu sorguyla ilgili belge bulunamadı. Farklı kelimelerle tekrar aramayı dene."
+    not_found = (
+        "Bu sorguyla ilgili belge bulunamadı. Farklı kelimelerle tekrar aramayı dene; "
+        "arama hakkın bittiyse kullanıcıya bilginin yüklenen dokümanlarda bulunamadığını söyle."
+    )
 
     @tool
     async def search_documents(

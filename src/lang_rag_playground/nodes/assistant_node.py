@@ -6,6 +6,7 @@ from langchain_core.runnables import Runnable
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ToolStrategy
 from langchain.agents.middleware import ToolCallLimitMiddleware, ToolRetryMiddleware
+from langgraph.errors import GraphRecursionError
 
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.models.agent_state_model import AgentState
@@ -39,6 +40,7 @@ AGENT_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
         MessagesPlaceholder("history"),
     ]
 )
+NOT_FOUND_ANSWER = "Bu bilgiyi yüklenen dokümanlarda bulamadım."
 
 
 def _format_memories(state: AgentState) -> str:
@@ -115,7 +117,7 @@ def build_assistant_agent(
     middleware_list = cast(
         Sequence[Any],
         [
-            ToolCallLimitMiddleware(run_limit=settings.MAX_TOOL_CALLS),
+            ToolCallLimitMiddleware(tool_name="search_documents", run_limit=settings.MAX_TOOL_CALLS),
             ToolRetryMiddleware(
                 max_retries=settings.TOOL_MAX_RETRIES,
                 on_failure=_tool_failure_message,
@@ -148,7 +150,14 @@ def make_agent_assistant_node(
         if state.get("feedback"):
             logger.info(f"Rerunning agent with judge feedback (attempt {state.get('retry_count', 0) + 1}).")
         agent_context = AgentContext()
-        result = await agent.ainvoke({"messages": messages}, context=agent_context)
+        try:
+            result = await agent.ainvoke(
+                {"messages": messages},
+                context=agent_context,
+            )
+        except GraphRecursionError:
+            logger.warning("Agent hit the recursion limit; returning the not-found answer.")
+            return _assistant_update(AssistantResponse(answer=NOT_FOUND_ANSWER), agent_context.sources)
         search_queries = [
             call["args"].get("query")
             for message in result["messages"]
@@ -158,7 +167,13 @@ def make_agent_assistant_node(
         logger.info(f"Agent made {len(search_queries)} search call(s): {search_queries}")
         response = result.get("structured_response")
         if not isinstance(response, AssistantResponse):
-            raise TypeError("The agent did not return an AssistantResponse.")
+            last_text = result["messages"][-1].text if result.get("messages") else ""
+            if last_text.strip():
+                logger.warning("Agent answered in plain text without AssistantResponse; using it without citations.")
+                response = AssistantResponse(answer=last_text, cited_sources=[])
+            else:
+                logger.warning("Agent returned no answer; returning the not-found answer.")
+                response = AssistantResponse(answer=NOT_FOUND_ANSWER, cited_sources=[])
         return _assistant_update(response, agent_context.sources)
 
     return assistant_node

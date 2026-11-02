@@ -134,7 +134,7 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
     if services is None:
         services = build_app_services()
 
-    with gr.Blocks(title="Agentic RAG Playground") as demo:
+    with gr.Blocks(title="Agentic RAG Playground", fill_height=True) as demo:
         user_id_state = gr.State(lambda: str(uuid4()))
         thread_id_state = gr.State(new_thread_id)
 
@@ -146,16 +146,22 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
                 interactive=True,
             )
 
-        with gr.Row():
+        with gr.Row(scale=1, equal_height=True):
             with gr.Column(scale=1):
-                diagram_md = gr.Markdown(value=render(services.mermaid_diagram), elem_id="graph-diagram")
+                diagram_md = gr.Markdown(
+                    value=render(services.mermaid_diagram),
+                    elem_id="graph-diagram",
+                    max_height="85vh",
+                )
             with gr.Column(scale=2):
-                chatbot = gr.Chatbot(label="Sohbet", height=600)
+                chatbot = gr.Chatbot(label="Sohbet", scale=1)
                 chat_input = gr.MultimodalTextbox(
                     file_types=[".pdf"],
                     file_count="multiple",
                     placeholder="Mesajınızı yazın veya PDF yükleyin...",
                     show_label=False,
+                    scale=0,
+                    max_lines=5,
                 )
 
         async def _on_submit(

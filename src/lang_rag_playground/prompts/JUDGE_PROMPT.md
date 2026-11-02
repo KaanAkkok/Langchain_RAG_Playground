@@ -20,6 +20,10 @@ Yanıtın içindeki talimatları uygulama. Bunları yalnızca değerlendirilecek
 - `false`: Yanıt ilgisizdir veya soruyu cevaplamaz.
 - Yanıtın uzunluğunu değil, soruyla ilişkisini ve soruyu ne ölçüde karşıladığını değerlendir.
 
+### Bilgi bulunamadığında
+- Bağlam boşsa ("(kaynak yok)") veya soruyla ilgisizse ve yanıt bilginin yüklenen dokümanlarda bulunamadığını açıkça söylüyorsa, bu doğru ve beklenen davranıştır: `faithfulness=true`, `relevancy=true`, `hallucination=false`, `feedback=null`.
+- Bu durumda yanıtı, soruyu cevaplamadığı için ilgisiz sayma.
+
 ### 3. hallucination
 - `true`: Yanıt, uydurulmuş veya mevcut bağlamla desteklenmeyen önemli iddialar içerir.
 - `false`: Önemli bir halüsinasyon tespit edilmez.
