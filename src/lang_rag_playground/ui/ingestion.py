@@ -1,25 +1,56 @@
-# "+" ile yüklenen dosyaları işler: çıkar → chunk'la → Qdrant'a yaz. Graph'tan bağımsız çalışır.
-#
-# YAPILACAKLAR
-#
-# 1. async def ingest_files(paths, extractor, chunker, retrieval_service) -> AsyncIterator[str]
-#    Her dosya için üç adım (ayrı bir servis sınıfı yok, doğrudan bu üç çağrı):
-#      a) content = await asyncio.to_thread(extractor.extract, path)
-#         - extract senkron ve yavaş (OCR); to_thread olmadan arayüz donar.
-#      b) chunks = await chunker.chunk(content, path)
-#      c) count = await retrieval_service.store_documents(chunks)
-#    - Her adımda ilerleme mesajı yield et:
-#        "📄 tez.pdf: metin çıkarılıyor..." → "✂️ 42 chunk" → "💾 Qdrant'a yazıldı"
-#    - Aynı dosya tekrar yüklenirse DB'de kopya oluşmaz (vectordb'deki uuid5 point id'leri aynı chunk'ın
-#      üzerine yazar); yalnızca extract süresi boşa gider. Bu kabul edilebilir.
-#    - Bir dosya hata verirse (DocumentExtractionError / DocumentChunkingError) o dosyayı "❌" ile raporla,
-#      diğerlerine devam et.
-#
-# 2. Kısıtlar
-#    - İzin verilen uzantılar: app.py'deki MultimodalTextbox file_types ile aynı liste.
-#    - Boyut sınırı (ör. 50 MB) ve anlaşılır hata mesajı.
-#    - OCR'lı PDF'ler yavaştır: işlem bitene kadar mesaj kutusunu devre dışı bırak (interactive=False).
-#
-# 3. Sohbete bağlama
-#    - Mesajda hem dosya hem metin varsa: önce dosyaları işle, sonra soruyu graph'a gönder.
-#      Böylece "bu PDF'te örneklem kaç kişi?" tek mesajda çalışır.
+import asyncio
+from collections.abc import AsyncIterator, Sequence
+from pathlib import Path
+
+from lang_rag_playground.core.exceptions import (
+    DocumentChunkingError,
+    DocumentExtractionError,
+)
+from lang_rag_playground.core.settings import settings
+from lang_rag_playground.ingestion.document_chunker import DocumentChunker
+from lang_rag_playground.ingestion.document_extractor import DocumentExtractor
+from lang_rag_playground.retrieval.retrieval_service import RetrievalService
+
+MAX_FILE_SIZE_BYTES: int = 50 * 1024 * 1024
+
+
+async def ingest_files(
+    paths: Sequence[str | Path],
+    extractor: DocumentExtractor,
+    chunker: DocumentChunker,
+    retrieval_service: RetrievalService,
+) -> AsyncIterator[str]:
+    supported_extensions = [ext.lower() for ext in settings.SUPPORTED_FILE_TYPES]
+
+    for raw_path in paths:
+        file_path = Path(raw_path)
+        name = file_path.name
+
+        if not file_path.is_file():
+            yield f"❌ {name}: Dosya bulunamadı."
+            continue
+
+        if file_path.suffix.lower() not in supported_extensions:
+            yield (
+                f"❌ {name}: Desteklenmeyen dosya türü ({file_path.suffix}). "
+                "Yalnızca PDF dosyaları kabul edilir."
+            )
+            continue
+
+        if file_path.stat().st_size > MAX_FILE_SIZE_BYTES:
+            yield f"❌ {name}: Dosya boyutu 50 MB sınırını aşıyor."
+            continue
+
+        try:
+            yield f"📄 {name}: metin çıkarılıyor..."
+            content = await asyncio.to_thread(extractor.extract, file_path)
+            chunks = await chunker.chunk(content, file_path)
+            if not chunks:
+                yield f"❌ {name}: Belgeden metin parçası (chunk) üretilemedi."
+                continue
+            yield f"📄 {name}: ✂️ {len(chunks)} chunk oluşturuldu, Qdrant'a yazılıyor..."
+            await retrieval_service.store_documents(chunks)
+            yield f"✅ {name}: ✂️ {len(chunks)} chunk → 💾 Qdrant'a yazıldı"
+        except (DocumentExtractionError, DocumentChunkingError, Exception) as exc:
+            yield f"❌ {name}: {exc}"
+            continue
