@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
@@ -25,7 +26,7 @@ _REQUIRED_MODEL_SETTINGS = (
 
 @dataclass
 class AppServices:
-    graph: CompiledStateGraph
+    graph: CompiledStateGraph[Any, Any, Any, Any]
     checkpointer: InMemorySaver
     store: InMemoryStore
     retrieval_service: RetrievalService
@@ -96,7 +97,7 @@ def build_app_services() -> AppServices:
     )
 
 
-def studio_graph() -> CompiledStateGraph:
+def studio_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     embeddings = build_embedding_model()
     api_key = settings.QDRANT_API_KEY.get_secret_value().strip() or None
     vectordb = AsyncQdrantVectorDBService(
