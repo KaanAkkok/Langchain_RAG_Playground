@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,8 +28,6 @@ class Settings(BaseSettings):
     )
 
     LOG_LEVEL: str = "INFO"
-
-    GRAPH_MODE: Literal["workflow", "agentic"] = "agentic"
 
     SUPPORTED_FILE_TYPES: list[str] = [".pdf"]
 

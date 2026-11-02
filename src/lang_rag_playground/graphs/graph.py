@@ -34,12 +34,12 @@ from lang_rag_playground.retrieval.reranking import build_reranker_chain
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 
 
-def _validate_services(
+def workflow_graph(
     retrieval_service: RetrievalService,
     guardrails_service: Guardrails,
     store: BaseStore,
-    checkpointer: InMemorySaver | None,
-) -> None:
+    checkpointer: InMemorySaver | None
+):
     if any(
         service is None
         for service in [retrieval_service, guardrails_service, store]
@@ -48,55 +48,38 @@ def _validate_services(
     if checkpointer is None:
         raise ValueError("Checkpointer must be provided.")
 
+    intent_chain = build_intent_chain()
+    reranker_chain = build_reranker_chain()
+    assistant_chain = build_assistant_chain()
+    judge_chain = build_judge_chain()
+    memory_chain = build_memory_extract_chain()
 
-def _build_common_graph(
-    guardrails_service: Guardrails, retry_policy: RetryPolicy
-) -> StateGraph[AgentState, Context, AgentState, AgentState]:
-    """Nodes and edges shared by both graphs. The caller adds `assistant` and wires
-    `memory_recall` -> ... -> `assistant`."""
+    retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
+
     builder = StateGraph(AgentState, context_schema=Context)
     builder.add_node("input_guardrails", make_input_guardrails_node(guardrails_service))
-    builder.add_node("intent", make_intent_node(build_intent_chain()), retry_policy=retry_policy)
-    builder.add_node("memory_recall", make_memory_recall_node())
-    builder.add_node("judge", make_judge_node(build_judge_chain()), retry_policy=retry_policy)
+    builder.add_node("intent", make_intent_node(intent_chain), retry_policy=retry_policy)
+    builder.add_node("retrieval", make_retrieval_node(retrieval_service), retry_policy=retry_policy)
+    builder.add_node("reranker", make_reranker_node(reranker_chain), retry_policy=retry_policy)
+    builder.add_node("assistant", make_workflow_assistant_node(assistant_chain), retry_policy=retry_policy)
+    builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
     builder.add_node("output_guardrails", make_output_guardrails_node(guardrails_service))
-    builder.add_node("memory_extract", make_memory_extract_node(build_memory_extract_chain()))
+    builder.add_node("memory_recall", make_memory_recall_node())
+    builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
     builder.add_node("blocked", blocked_response_node)
 
     builder.add_edge(START, "input_guardrails")
     builder.add_edge("intent", "memory_recall")
+    builder.add_edge("retrieval", "reranker")
+    builder.add_edge("reranker", "assistant")
     builder.add_edge("assistant", "judge")
     builder.add_edge("blocked", END)
     builder.add_edge("memory_extract", END)
 
     builder.add_conditional_edges("input_guardrails", route_after_input_guardrails)
-    builder.add_conditional_edges("judge", route_after_judge)
-    builder.add_conditional_edges("output_guardrails", route_after_output_guardrails)
-    return builder
-
-
-def workflow_graph(
-    retrieval_service: RetrievalService,
-    guardrails_service: Guardrails,
-    store: BaseStore,
-    checkpointer: InMemorySaver | None
-):
-    """Classic workflow RAG: the graph decides when to search.
-
-    memory_recall ─┬→ retrieval → reranker → assistant → judge
-                   └→ assistant (non-knowledge intents)
-    """
-    _validate_services(retrieval_service, guardrails_service, store, checkpointer)
-    retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
-
-    builder = _build_common_graph(guardrails_service, retry_policy)
-    builder.add_node("retrieval", make_retrieval_node(retrieval_service), retry_policy=retry_policy)
-    builder.add_node("reranker", make_reranker_node(build_reranker_chain()), retry_policy=retry_policy)
-    builder.add_node("assistant", make_workflow_assistant_node(build_assistant_chain()), retry_policy=retry_policy)
-
     builder.add_conditional_edges("memory_recall", route_after_memory_recall)
-    builder.add_edge("retrieval", "reranker")
-    builder.add_edge("reranker", "assistant")
+    builder.add_conditional_edges("output_guardrails", route_after_output_guardrails)
+    builder.add_conditional_edges("judge", route_after_judge)
 
     return builder.compile(checkpointer=checkpointer, store=store)
 
@@ -107,34 +90,44 @@ def agentic_graph(
     store: BaseStore,
     checkpointer: InMemorySaver | None
 ):
-    """Agentic RAG: the assistant agent decides when and what to search through tools.
+    if any(
+        service is None
+        for service in [retrieval_service, guardrails_service, store]
+    ):
+        raise ValueError("Retrieval service, guardrails service, and store must be provided.")
+    if checkpointer is None:
+        raise ValueError("Checkpointer must be provided.")
 
-    memory_recall → assistant (create_agent ⟲ search_documents) → judge
-    """
-    _validate_services(retrieval_service, guardrails_service, store, checkpointer)
+    intent_chain = build_intent_chain()
+    reranker_chain = build_reranker_chain()
+    assistant_agent = build_assistant_agent(retrieval_service, reranker_chain)
+    judge_chain = build_judge_chain()
+    memory_chain = build_memory_extract_chain()
+
     retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
 
-    assistant_agent = build_assistant_agent(retrieval_service, build_reranker_chain())
-
-    builder = _build_common_graph(guardrails_service, retry_policy)
+    builder = StateGraph(AgentState, context_schema=Context)
+    builder.add_node("input_guardrails", make_input_guardrails_node(guardrails_service))
+    builder.add_node("intent", make_intent_node(intent_chain), retry_policy=retry_policy)
     builder.add_node("assistant", make_agent_assistant_node(assistant_agent), retry_policy=retry_policy)
+    builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
+    builder.add_node("output_guardrails", make_output_guardrails_node(guardrails_service))
+    builder.add_node("memory_recall", make_memory_recall_node())
+    builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
+    builder.add_node("blocked", blocked_response_node)
 
+    builder.add_edge(START, "input_guardrails")
+    builder.add_edge("intent", "memory_recall")
     builder.add_edge("memory_recall", "assistant")
+    builder.add_edge("assistant", "judge")
+    builder.add_edge("blocked", END)
+    builder.add_edge("memory_extract", END)
+
+    builder.add_conditional_edges("input_guardrails", route_after_input_guardrails)
+    builder.add_conditional_edges("output_guardrails", route_after_output_guardrails)
+    builder.add_conditional_edges("judge", route_after_judge)
 
     return builder.compile(checkpointer=checkpointer, store=store)
-
-
-def build_graph(
-    retrieval_service: RetrievalService,
-    guardrails_service: Guardrails,
-    store: BaseStore,
-    checkpointer: InMemorySaver | None,
-    mode: str = settings.GRAPH_MODE,
-):
-    graph_factory = {"workflow": workflow_graph, "agentic": agentic_graph}.get(mode)
-    if graph_factory is None:
-        raise ValueError(f"Unknown graph mode: {mode!r}. Expected 'workflow' or 'agentic'.")
-    return graph_factory(retrieval_service, guardrails_service, store, checkpointer)
 
 
 if __name__ == "__main__":
@@ -145,6 +138,7 @@ if __name__ == "__main__":
 
     embedding_model = build_embedding_model()
     retrieval_service = RetrievalService(AsyncQdrantVectorDBService(embedding_model, host="localhost", port=6333), "dummy")
-    for mode in ("workflow", "agentic"):
-        graph = build_graph(retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver(), mode=mode)
-        graph.get_graph().draw_mermaid_png(output_file_path=f"graph_diagram_{mode}.png")
+    workflow = workflow_graph(retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver())
+    workflow.get_graph().draw_mermaid_png(output_file_path="graph_diagram_workflow.png")
+    agentic = agentic_graph(retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver())
+    agentic.get_graph().draw_mermaid_png(output_file_path="graph_diagram_agentic.png")

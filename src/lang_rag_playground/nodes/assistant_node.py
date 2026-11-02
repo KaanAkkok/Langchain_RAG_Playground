@@ -27,16 +27,12 @@ logger = get_logger(__name__)
 
 
 _CONTEXT_SECTIONS = "\n\n## Kullanıcı hakkında bilinenler\n{memories}\n\n## Görev\n{intent}"
-
-# Workflow graph: sources are retrieved and reranked by graph nodes before the assistant runs.
 WORKFLOW_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
     [
         ("system", ASSISTANT_PROMPT + _CONTEXT_SECTIONS + "\n\n## Kaynaklar\n{sources}\n\n{feedback}"),
         MessagesPlaceholder("history"),
     ]
 )
-
-# Agentic graph: the agent fetches sources itself through tools.
 AGENT_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
     [
         ("system", ASSISTANT_PROMPT + "\n\n" + ASSISTANT_AGENT_PROMPT + _CONTEXT_SECTIONS + "\n\n## Önerilen arama sorgusu\n{resolved_query}\n\n{feedback}"),
