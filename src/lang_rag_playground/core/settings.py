@@ -94,5 +94,7 @@ class Settings(BaseSettings):
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
 
+    GRADIO_HOST: str = "localhost"
+    GRADIO_PORT: int = 7860
 
 settings = Settings()
