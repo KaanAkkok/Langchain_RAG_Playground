@@ -5,10 +5,12 @@ LEGEND_MARKDOWN = (
     "🟨 Çalışıyor · "
     "🟩 Tamamlandı · "
     "🟥 Hata · "
-    "--> Koşullu yönlendirme (router)"
 )
 
 _CLASS_DEFS = (
+    "\tclassDef default fill:#f2f0ff,stroke:#7c6fd6,color:#111827;\n"
+    "\tclassDef first fill:#f2f0ff,fill-opacity:1,color:#111827;\n"
+    "\tclassDef last fill:#bfb6fc,color:#111827;\n"
     "\tclassDef active fill:#fde68a,stroke:#d97706,stroke-width:2px,color:#1f2937;\n"
     "\tclassDef visited fill:#bbf7d0,stroke:#16a34a,stroke-width:2px,color:#14532d;\n"
     "\tclassDef failed fill:#fecaca,stroke:#dc2626,stroke-width:2px,color:#7f1d1d;"

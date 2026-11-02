@@ -11,6 +11,16 @@ from lang_rag_playground.ui.ingestion import ingest_files
 from lang_rag_playground.ui.services import AppServices, build_app_services
 from lang_rag_playground.core.settings import settings
 
+APP_CSS = """
+#graph-diagram .nodeLabel,
+#graph-diagram .nodeLabel * {
+    color: #111827 !important;
+}
+#graph-diagram .node text {
+    fill: #111827 !important;
+}
+"""
+
 
 async def handle_submit(
     user_input: dict[str, Any] | None,
@@ -138,13 +148,13 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
 
         with gr.Row():
             with gr.Column(scale=1):
-                diagram_md = gr.Markdown(value=render(services.mermaid_diagram))
+                diagram_md = gr.Markdown(value=render(services.mermaid_diagram), elem_id="graph-diagram")
             with gr.Column(scale=2):
                 chatbot = gr.Chatbot(label="Sohbet", height=600)
                 chat_input = gr.MultimodalTextbox(
                     file_types=[".pdf"],
                     file_count="multiple",
-                    placeholder="Mesajınızı yazın veya + ile PDF yükleyin...",
+                    placeholder="Mesajınızı yazın veya PDF yükleyin...",
                     show_label=False,
                 )
 
@@ -205,6 +215,7 @@ def main() -> None:
     demo.queue().launch(
         server_name=settings.GRADIO_HOST,
         server_port=settings.GRADIO_PORT,
+        css=APP_CSS,
     )
 
 

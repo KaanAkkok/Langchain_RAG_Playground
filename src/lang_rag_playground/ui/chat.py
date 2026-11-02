@@ -69,7 +69,7 @@ def _format_reranker(update: dict[str, Any]) -> tuple[str, str]:
 def _format_assistant(update: dict[str, Any]) -> tuple[str, str]:
     retry_count = int(update.get("retry_count", 0) or 0)
     reranked = update.get("reranked_documents") or []
-    title = f"[ASSISTANT] Cevap yeniden yazıldı" if retry_count > 0 else "✍️ Cevap yazıldı"
+    title = f"[ASSISTANT] Cevap yeniden yazıldı" if retry_count > 0 else "[ASSISTANT] Cevap yazıldı"
     content = f"İncelenen kaynak sayısı: {len(reranked)}" if reranked else "Yanıt üretildi."
     return title, content
 
