@@ -15,7 +15,7 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    container_name: rag_app
+    container_name: lang_rag_app
     env_file: .env
     environment:
       QDRANT_HOST: qdrant
