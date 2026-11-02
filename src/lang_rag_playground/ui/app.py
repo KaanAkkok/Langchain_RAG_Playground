@@ -47,7 +47,7 @@ async def handle_submit(
                 gr.ChatMessage(
                     role="assistant",
                     content="Dosyalar işleniyor...",
-                    metadata={"title": "📥 PDF Yükleme", "status": "pending"},
+                    metadata={"title": "[INGESTION] PDF Yükleme", "status": "pending"},
                 )
             )
             ingest_idx = len(history) - 1
@@ -63,7 +63,7 @@ async def handle_submit(
                 history[ingest_idx] = gr.ChatMessage(
                     role="assistant",
                     content="\n".join(ingest_logs),
-                    metadata={"title": "📥 PDF Yükleme", "status": "pending"},
+                    metadata={"title": "[INGESTION] PDF Yükleme", "status": "pending"},
                 )
                 yield (
                     list(history),
@@ -75,7 +75,7 @@ async def handle_submit(
             history[ingest_idx] = gr.ChatMessage(
                 role="assistant",
                 content="\n".join(ingest_logs),
-                metadata={"title": "📥 PDF Yükleme", "status": "done"},
+                metadata={"title": "[INGESTION] PDF Yükleme", "status": "done"},
             )
             yield (
                 list(history),

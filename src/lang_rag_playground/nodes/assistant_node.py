@@ -49,6 +49,16 @@ def _assistant_update(response: AssistantResponse, sources: list[Document]) -> d
     cited_numbers = sorted(
         {n for n in response.cited_sources if 1 <= n <= len(sources)}
     )
+    invalid_numbers = sorted(set(response.cited_sources) - set(cited_numbers))
+    if invalid_numbers:
+        logger.warning(
+            f"Assistant cited non-existent sources {invalid_numbers} (available: 1-{len(sources)}); dropped."
+        )
+    logger.info(
+        f"Answer generated ({len(response.answer)} chars), "
+        f"sources: {len(sources)}, cited: {cited_numbers}"
+    )
+    logger.debug(f"Answer: {response.answer}")
     return {
         "generation": response.answer,
         "reranked_documents": sources,
@@ -72,6 +82,8 @@ def make_workflow_assistant_node(
         last_user_msg = get_user_last_message(state)
         history = trim_history(state, max_history_tokens) or [last_user_msg]
         sources = state.get("reranked_documents") or []
+        if state.get("feedback"):
+            logger.info(f"Rewriting answer with judge feedback (attempt {state.get('retry_count', 0) + 1}).")
         response = await chain.ainvoke(
             {
                 "memories": _format_memories(state),
@@ -133,8 +145,20 @@ def make_agent_assistant_node(
             feedback=format_feedback(state.get("feedback")),
             history=history,
         )
+        if state.get("feedback"):
+            logger.info(f"Rerunning agent with judge feedback (attempt {state.get('retry_count', 0) + 1}).")
         agent_context = AgentContext()
         result = await agent.ainvoke({"messages": messages}, context=agent_context)
-        return _assistant_update(result["structured_response"], agent_context.sources)
+        search_queries = [
+            call["args"].get("query")
+            for message in result["messages"]
+            for call in getattr(message, "tool_calls", None) or []
+            if call["name"] == "search_documents"
+        ]
+        logger.info(f"Agent made {len(search_queries)} search call(s): {search_queries}")
+        response = result.get("structured_response")
+        if not isinstance(response, AssistantResponse):
+            raise TypeError("The agent did not return an AssistantResponse.")
+        return _assistant_update(response, agent_context.sources)
 
     return assistant_node

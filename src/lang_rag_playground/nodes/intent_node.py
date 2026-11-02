@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable
 
+from lang_rag_playground.core.logger import get_logger
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.models.agent_state_model import AgentState
 from lang_rag_playground.nodes.utils import (
@@ -10,6 +11,8 @@ from lang_rag_playground.nodes.utils import (
 from lang_rag_playground.prompts.prompts import INTENT_PROMPT
 from lang_rag_playground.schemas.intent_schema import Intent
 from lang_rag_playground.services.llm import build_chat_model
+
+logger = get_logger(__name__)
 
 INTENT_TEMPLATE = ChatPromptTemplate.from_messages(
     [
@@ -41,6 +44,15 @@ def make_intent_node(
         if not isinstance(response, Intent):
             raise TypeError("The response is not of type Intent class.")
         intent = response.intent if response.confidence >= min_confidence else "needs_clarification"
+        if intent != response.intent:
+            logger.warning(
+                f"Low intent confidence ({response.confidence:.2f} < {min_confidence}): "
+                f"'{response.intent}' downgraded to 'needs_clarification'."
+            )
+        logger.info(
+            f"Intent: {intent} (confidence {response.confidence:.2f}), "
+            f"resolved query: '{response.resolved_query}'"
+        )
         return {
             "intent": intent,
             "intent_confidence": response.confidence,

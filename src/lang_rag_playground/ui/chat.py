@@ -16,13 +16,17 @@ def format_citations(documents: Sequence[Document]) -> str:
         doc_name = doc.metadata.get("document_name", "Bilinmeyen")
         page = doc.metadata.get("page", "?")
         para = doc.metadata.get("paragraph_no", "?")
-        score = float(doc.metadata.get("reranker_score", 0.0))
-        lines.append(f"[{i}] {doc_name}, s.{page}, ¶{para} — reranker {score:.1f}")
+        reranker_score = float(doc.metadata.get("reranker_score") or 0.0)
+        if reranker_score > 0:
+            score_label = f"reranker {reranker_score:.1f}"
+        else:
+            score_label = f"hybrid {float(doc.metadata.get('score') or 0.0):.3f} (rerank yok)"
+        lines.append(f"[{i}] {doc_name}, page.{page}, paragraph.{para} — {score_label}\n\n{doc.page_content[:200]}...\n")
     return "\n".join(lines)
 
 
 def _format_input_guardrails(update: dict[str, Any]) -> tuple[str, str]:
-    title = "🛡️ Girdi kontrolü"
+    title = "[GUARDRAILS] Girdi kontrolü"
     if not update.get("is_input_safe", True):
         content = update.get("security_message") or "Güvenlik engeli uygulandı."
     elif "messages" in update:
@@ -36,28 +40,28 @@ def _format_intent(update: dict[str, Any]) -> tuple[str, str]:
     intent = update.get("intent", "unknown")
     conf = float(update.get("intent_confidence", 0.0))
     rq = update.get("resolved_query", "")
-    title = f"🎯 Niyet: {intent} (güven {conf:.2f})"
+    title = f"[INTENT] Niyet: {intent} (güven {conf:.2f})"
     content = f"Çözümlenen sorgu: {rq}" if rq else f"Niyet: {intent}"
     return title, content
 
 
 def _format_memory_recall(update: dict[str, Any]) -> tuple[str, str]:
     memories = update.get("memories") or []
-    title = f"🧠 {len(memories)} hatıra bulundu"
+    title = f"[MEMORY] {len(memories)} hatıra bulundu"
     content = "\n".join(f"- {m}" for m in memories) if memories else "İlgili hatıra bulunamadı."
     return title, content
 
 
 def _format_retrieval(update: dict[str, Any]) -> tuple[str, str]:
     docs = update.get("raw_documents") or []
-    title = f"🔍 {len(docs)} belge bulundu"
+    title = f"[RETRIEVAL] {len(docs)} belge bulundu"
     content = f"Qdrant'tan {len(docs)} aday belge getirildi."
     return title, content
 
 
 def _format_reranker(update: dict[str, Any]) -> tuple[str, str]:
     docs = update.get("reranked_documents") or []
-    title = f"📑 {len(docs)} belge sıralandı"
+    title = f"[RERANKER] {len(docs)} belge sıralandı"
     content = f"{len(docs)} belge yeniden sıralandı."
     return title, content
 
@@ -65,7 +69,7 @@ def _format_reranker(update: dict[str, Any]) -> tuple[str, str]:
 def _format_assistant(update: dict[str, Any]) -> tuple[str, str]:
     retry_count = int(update.get("retry_count", 0) or 0)
     reranked = update.get("reranked_documents") or []
-    title = "✍️ Cevap yeniden yazıldı" if retry_count > 0 else "✍️ Cevap yazıldı"
+    title = f"[ASSISTANT] Cevap yeniden yazıldı" if retry_count > 0 else "✍️ Cevap yazıldı"
     content = f"İncelenen kaynak sayısı: {len(reranked)}" if reranked else "Yanıt üretildi."
     return title, content
 
@@ -74,16 +78,16 @@ def _format_judge(update: dict[str, Any]) -> tuple[str, str]:
     passed = update.get("judge_passed", False)
     feedback = update.get("feedback") or ""
     if passed:
-        title = "⚖️ Doğrulama: geçti"
+        title = f"[JUDGE] Doğrulama: geçti"
         content = "Yanıt doğrulandı."
     else:
-        title = f"⚖️ Doğrulama: geçmedi ({feedback})" if feedback else "⚖️ Doğrulama: geçmedi"
+        title = f"[JUDGE] Doğrulama: geçmedi ({feedback})" if feedback else "[JUDGE] Doğrulama: geçmedi"
         content = feedback or "Yanıt doğrulamadan geçemedi."
     return title, content
 
 
 def _format_memory_extract(_update: dict[str, Any]) -> tuple[str, str]:
-    return "💾 Hafıza güncellendi", "Uzun süreli hafıza güncellendi."
+    return "[MEMORY] Hafıza güncellendi", "Uzun süreli hafıza güncellendi."
 
 
 NODE_STEPS: dict[str, Callable[[dict[str, Any]], tuple[str, str]]] = {
@@ -168,7 +172,7 @@ async def respond(
                         node_name == "output_guardrails"
                         and accumulated_state.get("judge_passed") is False
                     ):
-                        answer_text += "\n\n⚠️ Bu yanıt doğrulanamadı"
+                        answer_text += "\n\n[WARNING] Bu yanıt doğrulanamadı"
                     if accumulated_state.get("cited_documents"):
                         answer_text += "\n\n**Kaynaklar:**\n" + format_citations(
                             accumulated_state["cited_documents"]
@@ -184,7 +188,7 @@ async def respond(
             list(history),
             render(services.mermaid_diagram, active_node=None, visited=visited),
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         history.append(gr.ChatMessage(role="assistant", content=f"❌ Bir hata oluştu: {exc}"))
         yield (
             list(history),

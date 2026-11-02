@@ -36,9 +36,11 @@ def make_search_documents_tool(
             query: Kısa ve anahtar kelime odaklı arama sorgusu. Türkçe veya İngilizce olabilir.
         """
         if not query or not query.strip():
+            logger.warning("search_documents called with an empty query.")
             return not_found
         candidate_docs = await retrieval_service.search(query=query, top_k=candidates)
         if not candidate_docs:
+            logger.info(f"search_documents('{query}'): no candidates.")
             return not_found
         try:
             documents = await rerank_documents(
@@ -52,9 +54,15 @@ def make_search_documents_tool(
             logger.warning(f"Rerank failed, falling back to vector order: {e}")
             documents = candidate_docs[:top_k]
         if not documents:
+            logger.info(f"search_documents('{query}'): no candidate passed min_score={min_score}.")
             return not_found
         start = len(runtime.context.sources) + 1
         runtime.context.sources.extend(documents)
+        scores = [doc.metadata.get("reranker_score") for doc in documents]
+        logger.info(
+            f"search_documents('{query}'): {len(candidate_docs)} candidates, kept {len(documents)} "
+            f"as sources [{start}-{start + len(documents) - 1}], scores: {scores}"
+        )
         formatted_sources = format_sources(documents, start=start)
         return f"Bulunan kaynaklar:\n\n{formatted_sources}"
     return search_documents

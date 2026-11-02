@@ -1,8 +1,11 @@
 from langchain_core.runnables import Runnable
 
+from lang_rag_playground.core.logger import get_logger
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.models.agent_state_model import AgentState
 from lang_rag_playground.retrieval.reranking import rerank_documents
+
+logger = get_logger(__name__)
 
 
 def make_reranker_node(
@@ -13,6 +16,7 @@ def make_reranker_node(
     async def reranker_node(state: AgentState) -> dict:
         candidates = state.get("raw_documents") or []
         if not candidates:
+            logger.info("No candidates to rerank.")
             return {"reranked_documents": []}
         reranked_documents = await rerank_documents(
             chain=chain,
@@ -20,6 +24,11 @@ def make_reranker_node(
             candidates=candidates,
             top_k=top_k,
             min_score=min_score,
+        )
+        scores = [doc.metadata.get("reranker_score") for doc in reranked_documents]
+        logger.info(
+            f"Reranked {len(candidates)} candidates, kept {len(reranked_documents)} "
+            f"(min_score={min_score}, top_k={top_k}), scores: {scores}"
         )
         return {"reranked_documents": reranked_documents}
 

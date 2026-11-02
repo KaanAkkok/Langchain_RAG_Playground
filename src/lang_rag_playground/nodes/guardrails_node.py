@@ -30,8 +30,12 @@ def make_input_guardrails_node(guardrails: Guardrails):
         if not result.is_input_safe:
             update["is_input_safe"] = False
             update["security_message"] = INJECTION_REFUSAL
+            logger.warning("Input rejected by guardrails; routing to blocked.")
         elif result.message is not None:
             update["messages"] = [result.message]
+            logger.info("Input is safe; PII masked in user message.")
+        else:
+            logger.info("Input is safe.")
         return update
 
     return input_guardrails_node
@@ -43,10 +47,13 @@ def make_output_guardrails_node(guardrails: Guardrails):
         if not generated_response:
             raise ValueError("No generated response found in state.")
         safe_response = guardrails.output_guardrail(generated_response)
+        if safe_response != generated_response:
+            logger.info("PII masked in generated answer.")
         if not state.get("judge_passed"):
             logger.warning(
                 "Answer could not be verified by the judge. Hallucination or irrelevancy may be present."
             )
+        logger.info(f"Final answer sent ({len(safe_response)} chars).")
         return {
             "generation": safe_response,
             "messages": [AIMessage(content=safe_response)],

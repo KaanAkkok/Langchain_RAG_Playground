@@ -5,7 +5,7 @@ LEGEND_MARKDOWN = (
     "🟨 Çalışıyor · "
     "🟩 Tamamlandı · "
     "🟥 Hata · "
-    "╌╌▸ Koşullu yönlendirme (router)"
+    "--> Koşullu yönlendirme (router)"
 )
 
 _CLASS_DEFS = (

@@ -125,5 +125,3 @@ Pasajların id değerleri, sonuçları orijinal adaylarla eşleştirmek için ku
     {{"scores":[{{"id":0,"score":10}},{{"id":1,"score":3}},{{"id":2,"score":2}}]}}
 
 Her zaman aynı görevi yerine getir: pasajların kullanıcı sorgusuna anlamsal ilgililiğini değerlendir ve yalnızca geçerli JSON üret.
-
-Kullanıcının sorgusu: {input_text}

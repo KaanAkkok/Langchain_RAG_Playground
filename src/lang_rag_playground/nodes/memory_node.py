@@ -40,6 +40,7 @@ def make_memory_recall_node(
     async def memory_recall_node(state: AgentState, runtime: Runtime[Context]) -> dict:
         memory_store = runtime.store
         if memory_store is None:
+            logger.warning("No memory store configured; skipping memory recall.")
             return {"memories": []}
         # Memory is optional: if the search fails, answer without it.
         try:
@@ -52,11 +53,13 @@ def make_memory_recall_node(
             logger.warning(f"Failed to search memories: {e}")
             return {"memories": []}
         if not items:
+            logger.info("No memories found for this user.")
             return {"memories": []}
         memories = []
         for item in items:
             if item.score is not None and item.score >= min_score:
                 memories.append(item.value["content"])
+        logger.info(f"Recalled {len(memories)}/{len(items)} memories (min_score={min_score}).")
         return {"memories": memories}
     return memory_recall_node
 
@@ -69,6 +72,7 @@ def make_memory_extract_node(
     async def memory_extract_node(state: AgentState, runtime: Runtime[Context]) -> dict:
         memory_store = runtime.store
         if memory_store is None:
+            logger.warning("No memory store configured; skipping memory extraction.")
             return {}
         history = trim_history(state, max_tokens=max_history_tokens)
         # The answer is already produced; a memory failure must not fail the turn.
@@ -80,6 +84,7 @@ def make_memory_extract_node(
         if not isinstance(response, MemoryExtraction):
             logger.warning("The response is not of type MemoryExtraction class.")
             return {}
+        stored = 0
         for memory in response.memories:
             if memory.confidence < threshold:
                 continue
@@ -89,8 +94,12 @@ def make_memory_extract_node(
                     key=str(uuid4()),
                     value=memory.model_dump(),
                 )
+                stored += 1
             except Exception as e:
                 logger.warning(f"Failed to store memory: {e}")
+        logger.info(
+            f"Stored {stored}/{len(response.memories)} extracted memories (threshold={threshold})."
+        )
         return {}
     return memory_extract_node
         
