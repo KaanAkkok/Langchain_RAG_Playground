@@ -51,6 +51,6 @@ async def ingest_files(
             yield f"📄 {name}: ✂️ {len(chunks)} chunk oluşturuldu, Qdrant'a yazılıyor..."
             await retrieval_service.store_documents(chunks)
             yield f"✅ {name}: ✂️ {len(chunks)} chunk → 💾 Qdrant'a yazıldı"
-        except (DocumentExtractionError, DocumentChunkingError, Exception) as exc:
+        except (DocumentExtractionError, DocumentChunkingError, Exception) as exc:  # noqa: BLE001
             yield f"❌ {name}: {exc}"
             continue

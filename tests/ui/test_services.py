@@ -1,10 +1,13 @@
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from lang_rag_playground.graphs.graph import agentic_graph
-from lang_rag_playground.ui.services import AppServices, build_app_services, studio_graph
+from lang_rag_playground.ui.services import (
+    build_app_services,
+)
 
 
 def test_agentic_graph_allows_none_store_and_checkpointer():
@@ -26,6 +29,7 @@ def test_agentic_graph_allows_none_store_and_checkpointer():
 
 def test_build_app_services_raises_clear_error_when_api_key_missing(monkeypatch):
     from pydantic import SecretStr
+
     from lang_rag_playground.core.settings import settings
 
     monkeypatch.setattr(settings, "GEMINI_API_KEY", SecretStr(""))
@@ -35,6 +39,7 @@ def test_build_app_services_raises_clear_error_when_api_key_missing(monkeypatch)
 
 def test_build_app_services_raises_clear_error_when_qdrant_unreachable(monkeypatch):
     from pydantic import SecretStr
+
     from lang_rag_playground.core.settings import settings
 
     monkeypatch.setattr(settings, "GEMINI_API_KEY", SecretStr("test-key"))
@@ -51,9 +56,9 @@ def test_build_app_services_raises_clear_error_when_qdrant_unreachable(monkeypat
     with (
         patch("lang_rag_playground.ui.services.build_embedding_model", return_value=MagicMock()),
         patch("lang_rag_playground.ui.services.AsyncQdrantVectorDBService", return_value=fake_vectordb),
+        pytest.raises(RuntimeError, match="Qdrant"),
     ):
-        with pytest.raises(RuntimeError, match="Qdrant"):
-            build_app_services()
+        build_app_services()
 
 
 def test_langgraph_json_points_to_studio_graph():

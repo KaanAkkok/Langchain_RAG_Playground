@@ -4,7 +4,6 @@ from langgraph.store.base import BaseStore
 from langgraph.types import RetryPolicy
 
 from lang_rag_playground.core.settings import settings
-
 from lang_rag_playground.graphs.routers import (
     route_after_input_guardrails,
     route_after_judge,
@@ -27,7 +26,11 @@ from lang_rag_playground.nodes.guardrails_node import (
 )
 from lang_rag_playground.nodes.intent_node import build_intent_chain, make_intent_node
 from lang_rag_playground.nodes.judge_node import build_judge_chain, make_judge_node
-from lang_rag_playground.nodes.memory_node import build_memory_extract_chain, make_memory_extract_node, make_memory_recall_node
+from lang_rag_playground.nodes.memory_node import (
+    build_memory_extract_chain,
+    make_memory_extract_node,
+    make_memory_recall_node,
+)
 from lang_rag_playground.nodes.reranker_node import make_reranker_node
 from lang_rag_playground.nodes.retrieval_node import make_retrieval_node
 from lang_rag_playground.retrieval.reranking import build_reranker_chain
@@ -129,7 +132,9 @@ def agentic_graph(
 if __name__ == "__main__":
     from langgraph.store.memory import InMemoryStore
 
-    from lang_rag_playground.retrieval.vectordb_service import AsyncQdrantVectorDBService
+    from lang_rag_playground.retrieval.vectordb_service import (
+        AsyncQdrantVectorDBService,
+    )
     from lang_rag_playground.services.llm import build_embedding_model
 
     embedding_model = build_embedding_model()
