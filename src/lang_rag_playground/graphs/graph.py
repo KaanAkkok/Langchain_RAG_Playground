@@ -37,16 +37,14 @@ from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 def workflow_graph(
     retrieval_service: RetrievalService,
     guardrails_service: Guardrails,
-    store: BaseStore,
-    checkpointer: InMemorySaver | None
+    store: BaseStore | None = None,
+    checkpointer: InMemorySaver | None = None,
 ):
     if any(
         service is None
-        for service in [retrieval_service, guardrails_service, store]
+        for service in [retrieval_service, guardrails_service]
     ):
-        raise ValueError("Retrieval service, guardrails service, and store must be provided.")
-    if checkpointer is None:
-        raise ValueError("Checkpointer must be provided.")
+        raise ValueError("Retrieval service and guardrails service must be provided.")
 
     intent_chain = build_intent_chain()
     reranker_chain = build_reranker_chain()
@@ -87,16 +85,14 @@ def workflow_graph(
 def agentic_graph(
     retrieval_service: RetrievalService,
     guardrails_service: Guardrails,
-    store: BaseStore,
-    checkpointer: InMemorySaver | None
+    store: BaseStore | None = None,
+    checkpointer: InMemorySaver | None = None,
 ):
     if any(
         service is None
-        for service in [retrieval_service, guardrails_service, store]
+        for service in [retrieval_service, guardrails_service]
     ):
-        raise ValueError("Retrieval service, guardrails service, and store must be provided.")
-    if checkpointer is None:
-        raise ValueError("Checkpointer must be provided.")
+        raise ValueError("Retrieval service and guardrails service must be provided.")
 
     intent_chain = build_intent_chain()
     reranker_chain = build_reranker_chain()

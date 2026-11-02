@@ -1,34 +1,117 @@
-# Uygulama boyunca tek örnek (singleton) olarak yaşayacak servislerin kurulumu.
-#
-# YAPILACAKLAR
-#
-# 1. AppServices dataclass'ı
-#    - Alanlar: graph, checkpointer, store, retrieval_service, guardrails, extractor, chunker.
-#    - app.py yalnızca bu nesneyi kullanır; hiçbir UI dosyası servisleri kendisi kurmaz.
-#
-# 2. build_app_services() -> AppServices
-#    - embeddings = build_embedding_model()
-#    - vectordb = AsyncQdrantVectorDBService(embeddings, host=settings.QDRANT_HOST, port=settings.QDRANT_PORT,
-#      api_key=...)
-#    - retrieval_service = RetrievalService(vectordb, settings.VECTORDB_KNOWLEDGE_COLLECTION_NAME)
-#    - guardrails = Guardrails()
-#    - checkpointer = InMemorySaver()   (anlık; kalıcılık istenirse burada SqliteSaver'a geçilir, tek satır)
-#    - store = InMemoryStore(index={"embed": embeddings, "dims": <embedding boyutu>, "fields": ["content"]})
-#        * dims: vectordb_service'teki gibi bir örnek embed ile ölç ya da settings'e sabit olarak ekle.
-#    - graph = workflow_graph(retrieval_service, guardrails, store, checkpointer)
-#        * workflow_graph şu an checkpointer'ı kendi içinde oluşturuyor; checkpointer parametresi geri
-#          eklenmeli. Geçmiş paneli thread'leri listeleyebilmek için AYNI checkpointer nesnesine erişmek zorunda.
-#    - extractor = DocumentExtractor(), chunker = DocumentChunker() (bkz. ingestion.py).
-#
-# 3. Başlangıç kontrolleri (hata mesajı açık olsun)
-#    - Qdrant'a bağlanılabiliyor mu? Bağlanılamıyorsa "Qdrant çalışmıyor: docker run ..." gibi anlaşılır bir hata ver.
-#    - Model adları ve API anahtarı settings'te dolu mu?
-#
-# 4. Graph diyagramı için mermaid metni
-#    - graph.get_graph().draw_mermaid() sonucunu burada bir kez üret ve AppServices'e koy (graph_view.py kullanır).
-#
-# 5. LangGraph Studio için ayrı fabrika fonksiyonu
-#    - studio_graph(): checkpointer ve store VERMEDEN workflow_graph çağırır (langgraph dev bunları kendisi sağlar).
-#    - langgraph.json bu fonksiyonu gösterecek:
-#        {"dependencies": ["."], "graphs": {"rag": "src/lang_rag_playground/ui/services.py:studio_graph"},
-#         "env": ".env"}
+from dataclasses import dataclass
+
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.store.memory import InMemoryStore
+
+from lang_rag_playground.core.settings import settings
+from lang_rag_playground.graphs.graph import agentic_graph
+from lang_rag_playground.guardrails.guardrails import Guardrails
+from lang_rag_playground.ingestion.document_chunker import DocumentChunker
+from lang_rag_playground.ingestion.document_extractor import DocumentExtractor
+from lang_rag_playground.retrieval.retrieval_service import RetrievalService
+from lang_rag_playground.retrieval.vectordb_service import AsyncQdrantVectorDBService
+from lang_rag_playground.services.llm import build_embedding_model
+
+_REQUIRED_MODEL_SETTINGS = (
+    "GEMINI_EMBEDDING_MODEL",
+    "GEMINI_INTENT_MODEL",
+    "GEMINI_RERANKER_MODEL",
+    "GEMINI_ASSISTANT_MODEL",
+    "GEMINI_JUDGE_MODEL",
+    "GEMINI_MEMORY_MODEL",
+)
+
+
+@dataclass
+class AppServices:
+    graph: CompiledStateGraph
+    checkpointer: InMemorySaver
+    store: InMemoryStore
+    retrieval_service: RetrievalService
+    guardrails: Guardrails
+    extractor: DocumentExtractor
+    chunker: DocumentChunker
+    mermaid_diagram: str
+
+
+def _validate_settings() -> None:
+    missing: list[str] = []
+    if not settings.GEMINI_API_KEY.get_secret_value().strip():
+        missing.append("GEMINI_API_KEY")
+    for attr in _REQUIRED_MODEL_SETTINGS:
+        val = getattr(settings, attr, "")
+        if not str(val).strip():
+            missing.append(attr)
+    if missing:
+        raise RuntimeError(
+            f"Eksik ortam değişkenleri (.env kontrol edin): {', '.join(missing)}"
+        )
+
+
+def build_app_services() -> AppServices:
+    _validate_settings()
+
+    embeddings = build_embedding_model()
+    api_key = settings.QDRANT_API_KEY.get_secret_value().strip() or None
+    vectordb = AsyncQdrantVectorDBService(
+        embeddings,
+        host=settings.QDRANT_HOST,
+        port=settings.QDRANT_PORT,
+        api_key=api_key,
+    )
+
+    try:
+        vectordb.client.get_collections()
+    except Exception as e:
+        raise RuntimeError(
+            f"Qdrant çalışmıyor (http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}). "
+            "Başlatmak için: docker run -p 6333:6333 qdrant/qdrant"
+        ) from e
+
+    dims = len(embeddings.embed_query("dimension probe")) or 768
+    store = InMemoryStore(
+        index={"embed": embeddings, "dims": dims, "fields": ["content"]}
+    )
+    checkpointer = InMemorySaver()
+    guardrails = Guardrails()
+    retrieval_service = RetrievalService(
+        vectordb, settings.VECTORDB_KNOWLEDGE_COLLECTION_NAME
+    )
+    extractor = DocumentExtractor()
+    chunker = DocumentChunker(embedding_model=embeddings)
+
+    graph = agentic_graph(retrieval_service, guardrails, store, checkpointer)
+    mermaid_diagram = graph.get_graph().draw_mermaid()
+
+    return AppServices(
+        graph=graph,
+        checkpointer=checkpointer,
+        store=store,
+        retrieval_service=retrieval_service,
+        guardrails=guardrails,
+        extractor=extractor,
+        chunker=chunker,
+        mermaid_diagram=mermaid_diagram,
+    )
+
+
+def studio_graph() -> CompiledStateGraph:
+    embeddings = build_embedding_model()
+    api_key = settings.QDRANT_API_KEY.get_secret_value().strip() or None
+    vectordb = AsyncQdrantVectorDBService(
+        embeddings,
+        host=settings.QDRANT_HOST,
+        port=settings.QDRANT_PORT,
+        api_key=api_key,
+    )
+    retrieval_service = RetrievalService(
+        vectordb, settings.VECTORDB_KNOWLEDGE_COLLECTION_NAME
+    )
+    guardrails = Guardrails()
+    return agentic_graph(
+        retrieval_service,
+        guardrails,
+        store=None,
+        checkpointer=None,
+    )
