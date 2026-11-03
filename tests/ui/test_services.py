@@ -83,8 +83,3 @@ def test_build_app_services_raises_clear_error_when_qdrant_unreachable(monkeypat
     ):
         build_app_services()
 
-
-def test_langgraph_json_points_to_studio_graph():
-    root = Path(__file__).resolve().parents[2]
-    cfg = json.loads((root / "langgraph.json").read_text(encoding="utf-8"))
-    assert cfg["graphs"]["rag"] == "src/lang_rag_playground/ui/services.py:studio_graph"

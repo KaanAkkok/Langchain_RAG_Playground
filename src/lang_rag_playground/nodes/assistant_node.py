@@ -23,7 +23,7 @@ from lang_rag_playground.prompts.prompts import ASSISTANT_AGENT_PROMPT, ASSISTAN
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 from lang_rag_playground.schemas.assistant_schema import AssistantResponse
 from lang_rag_playground.services.llm import build_chat_model
-from lang_rag_playground.tools.search_tools import make_search_documents_tool
+from lang_rag_playground.tools.retrieve_tool import make_search_documents_tool
 
 logger = get_logger(__name__)
 

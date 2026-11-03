@@ -1,7 +1,0 @@
-{
-  "dependencies": ["."],
-  "graphs": {
-    "rag": "src/lang_rag_playground/ui/services.py:studio_graph"
-  },
-  "env": ".env"
-}
