@@ -1,11 +1,13 @@
 import re
 import unicodedata
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Literal, cast
 
 import gradio as gr
 
 from lang_rag_playground.core.settings import settings
+from lang_rag_playground.ui.APP_CSS import APP_CSS
+from lang_rag_playground.ui.APP_JS import APP_JS
 from lang_rag_playground.ui.chat import respond
 from lang_rag_playground.ui.evaluation import (
     EVAL_TABLE_HEADERS,
@@ -16,56 +18,6 @@ from lang_rag_playground.ui.graph_view import render
 from lang_rag_playground.ui.history import list_threads, load_thread, new_thread_id
 from lang_rag_playground.ui.ingestion import ingest_files
 from lang_rag_playground.ui.services import AppServices, build_app_services
-
-APP_CSS = """
-#welcome-screen {
-    max-width: 520px;
-    margin: auto;
-    justify-content: center;
-    min-height: 80vh;
-}
-#welcome-title {
-    text-align: center;
-}
-#graph-diagram .nodeLabel,
-#graph-diagram .nodeLabel * {
-    color: #111827 !important;
-}
-#graph-diagram .node text {
-    fill: #111827 !important;
-}
-#thread-list .wrap {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    gap: 2px;
-}
-#thread-list label {
-    width: 100%;
-    padding: 8px 10px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    box-shadow: none;
-    transform: none;
-    font-weight: normal;
-}
-#thread-list label span {
-    margin-left: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-#thread-list label:hover {
-    background: var(--background-fill-secondary);
-}
-#thread-list label.selected {
-    background: var(--border-color-primary);
-    color: var(--body-text-color);
-}
-#thread-list input[type="radio"] {
-    display: none;
-}
-"""
 
 
 async def handle_submit(
@@ -177,10 +129,17 @@ async def handle_submit(
 
 
 def create_app(services: AppServices | None = None) -> gr.Blocks:
-    if services is None:
-        services = build_app_services()
+    services_holder: list[AppServices | None] = [services]
 
-    with gr.Blocks(title="Agentic RAG Playground", fill_height=True) as demo:
+    def get_services() -> AppServices:
+        current_services = services_holder[0]
+        if current_services is None:
+            raise gr.Error("Başlamak için graph türünü seçip Başla'ya basın.")
+        return current_services
+
+    with gr.Blocks(
+        title="Agentic RAG Playground", fill_height=True, css=APP_CSS, js=APP_JS
+    ) as demo:
         user_id_state = gr.State("")
         thread_id_state = gr.State(new_thread_id)
 
@@ -195,6 +154,12 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
                 placeholder="Memory kaydı için gerekiyor.",
                 max_lines=1,
                 autofocus=True,
+            )
+            graph_type = gr.Radio(
+                label="Grafiğin Türü",
+                choices=["agentic", "workflow"],
+                value="agentic",
+                interactive=True,
             )
             start_button = gr.Button("Başla", variant="primary")
 
@@ -212,10 +177,14 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
 
             with gr.Row(scale=1, equal_height=True):
                 with gr.Column(scale=1):
-                    diagram_md = gr.Markdown(
-                        value=render(services.mermaid_diagram),
+                    diagram_md = gr.HTML(
+                        value=(
+                            render(services.mermaid_diagram)
+                            if services is not None
+                            else "<p>Grafik türünü seçip Başla'ya basın.</p>"
+                        ),
                         elem_id="graph-diagram",
-                        max_height="85vh",
+                        max_height=850,
                     )
                 with gr.Column(scale=2):
                     chatbot = gr.Chatbot(label="Sohbet", scale=1)
@@ -228,8 +197,10 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
                         max_lines=5,
                     )
             with gr.Sidebar(position="right", open=False, width=380):
-                gr.Markdown(
+                eval_graph_label = gr.Markdown(
                     f"### Evaluation\nTest edilen graph: `{graph_label(services)}`"
+                    if services is not None
+                    else "### Evaluation"
                 )
                 eval_button = gr.Button("Eval çalıştır", variant="secondary")
                 eval_status = gr.Markdown()
@@ -240,7 +211,15 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
                     wrap=True,
                 )
 
-        def start_session(name: str) -> tuple[dict[str, Any], dict[str, Any], str]:
+        def start_session(
+            name: str, selected_graph_type: str
+        ) -> tuple[
+            dict[str, Any],
+            dict[str, Any],
+            str,
+            str,
+            str,
+        ]:
             normalized_name = unicodedata.normalize("NFKC", name).strip()
             if not normalized_name:
                 raise gr.Error("Lütfen isminizi yazın.")
@@ -248,10 +227,16 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
             user_key = user_key.strip("_-")
             if not user_key:
                 raise gr.Error("Geçerli bir isim yazın.")
+            services_holder[0] = build_app_services(
+                cast(Literal["agentic", "workflow"], selected_graph_type)
+            )
+            current_services = get_services()
             return (
                 gr.update(visible=False),
                 gr.update(visible=True),
                 f"user_{user_key.casefold()}",
+                render(current_services.mermaid_diagram),
+                f"### Evaluation\nTest edilen graph: `{graph_label(current_services)}`",
             )
 
         async def _on_submit(
@@ -260,16 +245,18 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
             user_id: str,
             thread_id: str,
         ) -> AsyncIterator[tuple[list[Any], str, dict[str, Any], dict[str, Any]]]:
+            current_services = get_services()
             async for out in handle_submit(
-                user_input, chat_history, user_id, thread_id, services
+                user_input, chat_history, user_id, thread_id, current_services
             ):
                 yield out
 
         def _on_new_chat() -> tuple[str, list[Any], str, dict[str, Any]]:
+            current_services = get_services()
             return (
                 new_thread_id(),
                 [],
-                render(services.mermaid_diagram),
+                render(current_services.mermaid_diagram),
                 gr.update(value=None),
             )
 
@@ -278,11 +265,12 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
         ) -> tuple[Any, Any, Any]:
             if not selected_thread_id:
                 return gr.update(), gr.update(), gr.update()
-            messages = await load_thread(services.graph, selected_thread_id)
+            current_services = get_services()
+            messages = await load_thread(current_services.graph, selected_thread_id)
             return (
                 selected_thread_id,
                 messages,
-                render(services.mermaid_diagram),
+                render(current_services.mermaid_diagram),
             )
 
         chat_input.submit(
@@ -304,7 +292,7 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
         )
 
         async def _on_eval() -> AsyncIterator[tuple[str, Any, dict[str, Any]]]:
-            async for out in run_evaluation(services):
+            async for out in run_evaluation(get_services()):
                 yield out
 
         # concurrency_limit=1: every run deletes and restores the evaluation collection
@@ -317,8 +305,14 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
 
         start_button.click(
             fn=start_session,
-            inputs=[name_input],
-            outputs=[welcome_screen, workspace, user_id_state],
+            inputs=[name_input, graph_type],
+            outputs=[
+                welcome_screen,
+                workspace,
+                user_id_state,
+                diagram_md,
+                eval_graph_label,
+            ],
         )
 
     return demo

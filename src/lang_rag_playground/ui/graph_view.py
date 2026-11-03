@@ -1,6 +1,12 @@
 from collections.abc import Sequence
+from html import escape
 
-LEGEND_MARKDOWN = "**Durum:** " "🟨 Çalışıyor · " "🟩 Tamamlandı · " "🟥 Hata · "
+LEGEND_HTML = (
+    '<p><strong>Durum:</strong> '
+    "🟨 Çalışıyor · "
+    "🟩 Tamamlandı · "
+    "🟥 Hata</p>"
+)
 
 _CLASS_DEFS = (
     "\tclassDef default fill:#f2f0ff,stroke:#7c6fd6,color:#111827;\n"
@@ -36,5 +42,5 @@ def render(
     if failed_node:
         lines.append(f"\tclass {failed_node} failed;")
 
-    diagram = "\n".join(lines)
-    return f"```mermaid\n{diagram}\n```\n\n{LEGEND_MARKDOWN}"
+    diagram = escape("\n".join(lines))
+    return f'<div class="mermaid">{diagram}</div>{LEGEND_HTML}'

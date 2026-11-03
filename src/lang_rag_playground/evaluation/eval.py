@@ -15,7 +15,6 @@ from lang_rag_playground.retrieval.vectordb_service import AsyncQdrantVectorDBSe
 
 logger = get_logger(__name__)
 
-# workflow_graph / agentic_graph from graphs.graph
 GraphBuilder = Callable[..., CompiledStateGraph[Any, Any, Any, Any]]
 
 

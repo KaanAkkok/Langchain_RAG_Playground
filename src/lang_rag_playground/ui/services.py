@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.evaluation.eval import GraphBuilder
-from lang_rag_playground.graphs.graph import agentic_graph
+from lang_rag_playground.graphs.graph import agentic_graph, workflow_graph
 from lang_rag_playground.guardrails.guardrails import Guardrails
 from lang_rag_playground.ingestion.document_chunker import DocumentChunker
 from lang_rag_playground.ingestion.document_extractor import DocumentExtractor
@@ -28,7 +28,6 @@ _REQUIRED_MODEL_SETTINGS = (
 @dataclass
 class AppServices:
     graph: CompiledStateGraph[Any, Any, Any, Any]
-    # builder of `graph`, reused by the eval panel on the evaluation collection
     graph_builder: GraphBuilder
     vectordb: AsyncQdrantVectorDBService
     checkpointer: InMemorySaver
@@ -54,7 +53,7 @@ def _validate_settings() -> None:
         )
 
 
-def build_app_services() -> AppServices:
+def build_app_services(graph_type: Literal["agentic", "workflow"]) -> AppServices:
     _validate_settings()
 
     embeddings = build_embedding_model()
@@ -84,7 +83,10 @@ def build_app_services() -> AppServices:
     extractor = DocumentExtractor()
     chunker = DocumentChunker(embedding_model=embeddings)
 
-    graph_builder = agentic_graph
+    if graph_type == "agentic":
+        graph_builder = agentic_graph
+    else:
+        graph_builder = workflow_graph
     graph = graph_builder(retrieval_service, guardrails, store, checkpointer)
     mermaid_diagram = graph.get_graph().draw_mermaid()
 
@@ -99,25 +101,4 @@ def build_app_services() -> AppServices:
         extractor=extractor,
         chunker=chunker,
         mermaid_diagram=mermaid_diagram,
-    )
-
-
-def studio_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
-    embeddings = build_embedding_model()
-    api_key = settings.QDRANT_API_KEY.get_secret_value().strip() or None
-    vectordb = AsyncQdrantVectorDBService(
-        embeddings,
-        host=settings.QDRANT_HOST,
-        port=settings.QDRANT_PORT,
-        api_key=api_key,
-    )
-    retrieval_service = RetrievalService(
-        vectordb, settings.VECTORDB_KNOWLEDGE_COLLECTION_NAME
-    )
-    guardrails = Guardrails()
-    return agentic_graph(
-        retrieval_service,
-        guardrails,
-        store=None,
-        checkpointer=None,
     )
