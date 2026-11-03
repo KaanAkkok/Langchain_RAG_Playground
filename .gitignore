@@ -6,7 +6,6 @@ dist/
 wheels/
 *.egg-info
 .gitignore
-.superpowers
 
 # Virtual environments
 .venv
@@ -15,6 +14,9 @@ wheels/
 .env
 
 # docs
-*/docs/
 */doc/
-/docs/
+/doc/
+
+# dev
+*.pytest_cache/
+*.ruff_cache/

@@ -1,0 +1,10 @@
+.git
+.venv
+.env
+doc/
+**/__pycache__
+**/.ipynb_checkpoints
+.cache/
+.ruff_cache/
+*.pytest_cache/
+*.ruff_cache/
