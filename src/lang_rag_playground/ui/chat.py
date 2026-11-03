@@ -202,7 +202,7 @@ async def respond(
                         node_name == "output_guardrails"
                         and accumulated_state.get("judge_passed") is False
                     ):
-                        answer_text += "\n\n[WARNING] Bu yanıt doğrulanamadı"
+                        answer_text += "\n\n[WARNING] Bu yanıt judge tarafından doğrulanamadı"
                     if accumulated_state.get("cited_documents"):
                         answer_text += "\n\n**Kaynaklar:**\n" + format_citations(
                             accumulated_state["cited_documents"]

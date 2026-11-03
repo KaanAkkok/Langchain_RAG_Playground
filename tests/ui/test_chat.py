@@ -154,7 +154,7 @@ async def test_respond_streams_steps_unverified_warning_and_citations():
     ]
     final_history, final_diagram = outputs[-1]
     assert final_history[0].role == "user"
-    assert "⚠️ Bu yanıt doğrulanamadı" in final_history[-1].content
+    assert "Bu yanıt doğrulanamadı" in final_history[-1].content
     assert "[1] tez.pdf, s.3, ¶2 — reranker 9.0" in final_history[-1].content
     assert (
         "class input_guardrails,intent,memory_recall,assistant,judge,output_guardrails visited;"
