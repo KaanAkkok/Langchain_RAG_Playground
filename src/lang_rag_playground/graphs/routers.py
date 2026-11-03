@@ -10,8 +10,8 @@ def route_after_input_guardrails(state: AgentState) -> Literal["blocked", "inten
     return "intent"
 
 
+# Workflow graph only: the agentic graph lets the assistant decide whether to search.
 def route_after_memory_recall(state: AgentState) -> Literal["retrieval", "assistant"]:
-    # Workflow graph only: the agentic graph lets the assistant decide whether to search.
     if state.get("intent") == "knowledge_question":
         return "retrieval"
     return "assistant"

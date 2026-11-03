@@ -3,13 +3,13 @@ from typing import Any
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.store.memory import InMemoryStore
 
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.graphs.graph import agentic_graph
 from lang_rag_playground.guardrails.guardrails import Guardrails
 from lang_rag_playground.ingestion.document_chunker import DocumentChunker
 from lang_rag_playground.ingestion.document_extractor import DocumentExtractor
+from lang_rag_playground.memory.qdrant_store import QdrantMemoryStore
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 from lang_rag_playground.retrieval.vectordb_service import AsyncQdrantVectorDBService
 from lang_rag_playground.services.llm import build_embedding_model
@@ -28,7 +28,7 @@ _REQUIRED_MODEL_SETTINGS = (
 class AppServices:
     graph: CompiledStateGraph[Any, Any, Any, Any]
     checkpointer: InMemorySaver
-    store: InMemoryStore
+    store: QdrantMemoryStore
     retrieval_service: RetrievalService
     guardrails: Guardrails
     extractor: DocumentExtractor
@@ -70,10 +70,8 @@ def build_app_services() -> AppServices:
             "Başlatmak için: docker run -p 6333:6333 qdrant/qdrant"
         ) from e
 
-    dims = len(embeddings.embed_query("dimension probe")) or 768
-    store = InMemoryStore(
-        index={"embed": embeddings, "dims": dims, "fields": ["content"]}
-    )
+    store = QdrantMemoryStore(vector_db=vectordb)
+    store.ensure_collection()
     checkpointer = InMemorySaver()
     guardrails = Guardrails()
     retrieval_service = RetrievalService(

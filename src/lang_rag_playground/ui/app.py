@@ -135,7 +135,7 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
         services = build_app_services()
 
     with gr.Blocks(title="Agentic RAG Playground", fill_height=True) as demo:
-        user_id_state = gr.State(lambda: str(uuid4()))
+        user_id_state = gr.State(lambda: "user_" + str(uuid4()))
         thread_id_state = gr.State(new_thread_id)
 
         with gr.Sidebar():

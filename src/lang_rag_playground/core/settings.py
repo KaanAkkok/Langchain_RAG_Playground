@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     MEMORY_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
 
     VECTORDB_KNOWLEDGE_COLLECTION_NAME: str = "knowledge_base"
-    VECTORDB_EVALUATION_COLLECTION_NAME: str = "evaluation_base"
+    VECTORDB_MEMORY_COLLECTION_NAME: str = "memory_base"
     EVAL_SNAPSHOT_PATH: str = str(
         PROJECT_ROOT
         / "data"
