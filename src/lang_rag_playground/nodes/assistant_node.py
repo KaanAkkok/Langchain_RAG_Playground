@@ -19,7 +19,7 @@ from lang_rag_playground.nodes.utils import (
     get_user_last_message,
     trim_history,
 )
-from lang_rag_playground.prompts.prompts import ASSISTANT_AGENT_PROMPT, ASSISTANT_PROMPT
+from lang_rag_playground.prompts.prompts import TOOL_PROMPT, ASSISTANT_PROMPT
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 from lang_rag_playground.schemas.assistant_schema import AssistantResponse
 from lang_rag_playground.services.llm import build_chat_model
@@ -48,7 +48,7 @@ AGENT_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
             "system",
             ASSISTANT_PROMPT
             + "\n\n"
-            + ASSISTANT_AGENT_PROMPT
+            + TOOL_PROMPT
             + _CONTEXT_SECTIONS
             + "\n\n## Önerilen arama sorgusu\n{resolved_query}\n\n{feedback}",
         ),

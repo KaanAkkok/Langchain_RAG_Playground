@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -44,18 +45,27 @@ class Settings(BaseSettings):
     INTENT_PROMPT_PATH: str = str(PROMPTS_DIR / "INTENT_PROMPT.md")
     RERANKER_PROMPT_PATH: str = str(PROMPTS_DIR / "RERANKER_PROMPT.md")
     ASSISTANT_PROMPT_PATH: str = str(PROMPTS_DIR / "ASSISTANT_PROMPT.md")
-    ASSISTANT_AGENT_PROMPT_PATH: str = str(PROMPTS_DIR / "ASSISTANT_AGENT_PROMPT.md")
+    TOOL_PROMPT_PATH: str = str(PROMPTS_DIR / "TOOL_PROMPT.md")
     JUDGE_PROMPT_PATH: str = str(PROMPTS_DIR / "JUDGE_PROMPT.md")
     MEMORY_PROMPT_PATH: str = str(PROMPTS_DIR / "MEMORY_PROMPT.md")
+    FAITHFULNESS_PROMPT_PATH: str = str(PROMPTS_DIR / "FAITHFULNESS_PROMPT.md")
+    ANSWER_RELEVANCY_PROMPT_PATH: str = str(PROMPTS_DIR / "ANSWER_RELEVANCY_PROMPT.md")
+    ANSWER_QUALITY_PROMPT_PATH: str = str(PROMPTS_DIR / "ANSWER_QUALITY_PROMPT.md")
+    ANSWER_QUALITY_PROMPT_PATH: str = str(PROMPTS_DIR / "ANSWER_QUALITY_PROMPT.md")
+    ANSWER_RELEVANCY_PROMPT_PATH: str = str(PROMPTS_DIR / "ANSWER_RELEVANCY_PROMPT.md")
+    FAITHFULNESS_PROMPT_PATH: str = str(PROMPTS_DIR / "FAITHFULNESS_PROMPT.md")
 
     INTENT_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
     RERANKER_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
     ASSISTANT_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
     JUDGE_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
     MEMORY_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
+    EVALUATION_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=1.0)
 
     VECTORDB_KNOWLEDGE_COLLECTION_NAME: str = "knowledge_base"
     VECTORDB_MEMORY_COLLECTION_NAME: str = "memory_base"
+    VECTORDB_EVALUATION_COLLECTION_NAME: str = "evaluation_base"
+    RETRIEVAL_EVALUATION_LEVEL: Literal[1, 2] = 1
     EVAL_SNAPSHOT_PATH: str = str(
         PROJECT_ROOT
         / "data"
@@ -63,6 +73,21 @@ class Settings(BaseSettings):
         / "snapshots"
         / "EVALUATION_SNAPSHOT.snapshot"
     )
+    EVALUATION_DOCUMENTS_DIR: str = str(
+        PROJECT_ROOT
+        / "data"
+        / "evaluation"
+        / "documents"
+    )
+    GROUND_TRUTH_PATH: str = str(
+        PROJECT_ROOT
+        / "data"
+        / "evaluation"
+        / "ground_truth"
+        / "GROUND_TRUTH.json"
+    )
+    GROUNDTRUTH_CHUNK_ID_TAG: str = "chunk_id"
+    GROUNDTRUTH_DOCUMENT_ID_TAG: str = "document_name"
 
     INTENT_MIN_CONFIDENCE: float = Field(default=0.5, ge=0.0, le=1.0)
     MIN_RERANK_SCORE: float = 3.0
@@ -87,15 +112,23 @@ class Settings(BaseSettings):
     LONG_TERM_MEMORY_CONFIDENCE_THRESHOLD: float = 0.7
     LONG_TERM_MEMORY_MIN_SCORE: float = 0.1
 
-    RAW_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "raw_documents")
-    SAVED_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "saved_documents")
+    RAW_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "documents" / "raw_documents")
+    SAVED_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "documents" / "saved_documents")
 
     QDRANT_API_KEY: SecretStr = SecretStr(os.getenv("QDRANT_API_KEY", ""))
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
+    QDRANT_GRPC_PORT: int = 6334
 
     GRADIO_HOST: str = "localhost"
     GRADIO_PORT: int = 7860
+
+    @model_validator(mode="after")
+    def be_sure_dirs(self):
+        os.makedirs(self.RAW_DOCUMENTS_DIR, exist_ok=True)
+        os.makedirs(self.SAVED_DOCUMENTS_DIR, exist_ok=True)
+        os.makedirs(self.EVALUATION_DOCUMENTS_DIR, exist_ok=True)
+        return self
 
 
 settings = Settings()

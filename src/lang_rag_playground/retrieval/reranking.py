@@ -30,7 +30,7 @@ async def rerank_documents(
     query: str,
     candidates: list[Document],
     top_k: int,
-    min_score: float,
+    min_score: float = settings.MIN_RERANK_SCORE,
 ) -> list[Document]:
     if not candidates:
         raise ValueError("The candidates list is empty.")

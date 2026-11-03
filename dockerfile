@@ -20,8 +20,9 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-install-project --no-dev
 
 COPY src ./src
+COPY data/evaluation ./data/evaluation
 RUN uv sync --frozen --no-dev --no-editable
-RUN mkdir -p data/raw_documents data/saved_documents
+RUN mkdir -p data/raw_documents data/saved_documents data/evaluation
 
 EXPOSE 7860
 

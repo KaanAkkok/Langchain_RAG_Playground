@@ -5,6 +5,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
 from lang_rag_playground.core.settings import settings
+from lang_rag_playground.evaluation.eval import GraphBuilder
 from lang_rag_playground.graphs.graph import agentic_graph
 from lang_rag_playground.guardrails.guardrails import Guardrails
 from lang_rag_playground.ingestion.document_chunker import DocumentChunker
@@ -27,6 +28,9 @@ _REQUIRED_MODEL_SETTINGS = (
 @dataclass
 class AppServices:
     graph: CompiledStateGraph[Any, Any, Any, Any]
+    # builder of `graph`, reused by the eval panel on the evaluation collection
+    graph_builder: GraphBuilder
+    vectordb: AsyncQdrantVectorDBService
     checkpointer: InMemorySaver
     store: QdrantMemoryStore
     retrieval_service: RetrievalService
@@ -80,11 +84,14 @@ def build_app_services() -> AppServices:
     extractor = DocumentExtractor()
     chunker = DocumentChunker(embedding_model=embeddings)
 
-    graph = agentic_graph(retrieval_service, guardrails, store, checkpointer)
+    graph_builder = agentic_graph
+    graph = graph_builder(retrieval_service, guardrails, store, checkpointer)
     mermaid_diagram = graph.get_graph().draw_mermaid()
 
     return AppServices(
         graph=graph,
+        graph_builder=graph_builder,
+        vectordb=vectordb,
         checkpointer=checkpointer,
         store=store,
         retrieval_service=retrieval_service,

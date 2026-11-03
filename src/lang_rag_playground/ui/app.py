@@ -7,6 +7,11 @@ import gradio as gr
 
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.ui.chat import respond
+from lang_rag_playground.ui.evaluation import (
+    EVAL_TABLE_HEADERS,
+    graph_label,
+    run_evaluation,
+)
 from lang_rag_playground.ui.graph_view import render
 from lang_rag_playground.ui.history import list_threads, load_thread, new_thread_id
 from lang_rag_playground.ui.ingestion import ingest_files
@@ -163,7 +168,7 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
             start_button = gr.Button("Başla", variant="primary")
 
         with gr.Column(visible=False) as workspace:
-            with gr.Sidebar():
+            with gr.Sidebar(open=False):
                 new_chat_btn = gr.Button("+ Yeni Sohbet", variant="primary")
                 thread_radio = gr.Radio(
                     label="Geçmiş Sohbetler",
@@ -188,6 +193,18 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
                         scale=0,
                         max_lines=5,
                     )
+            with gr.Sidebar(position="right", open=False, width=380):
+                gr.Markdown(
+                    f"### Evaluation\nTest edilen graph: `{graph_label(services)}`"
+                )
+                eval_button = gr.Button("Eval çalıştır", variant="secondary")
+                eval_status = gr.Markdown()
+                eval_table = gr.Dataframe(
+                    headers=EVAL_TABLE_HEADERS,
+                    datatype=["str", "str", "number"],
+                    interactive=False,
+                    wrap=True,
+                )
 
         def start_session(name: str) -> tuple[dict[str, Any], dict[str, Any], str]:
             normalized_name = unicodedata.normalize("NFKC", name).strip()
@@ -250,6 +267,18 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
             fn=_on_select_thread,
             inputs=[thread_radio],
             outputs=[thread_id_state, chatbot, diagram_md],
+        )
+
+        async def _on_eval() -> AsyncIterator[tuple[str, Any, dict[str, Any]]]:
+            async for out in run_evaluation(services):
+                yield out
+
+        # concurrency_limit=1: every run deletes and restores the evaluation collection
+        eval_button.click(
+            fn=_on_eval,
+            inputs=[],
+            outputs=[eval_status, eval_table, eval_button],
+            concurrency_limit=1,
         )
 
         start_button.click(

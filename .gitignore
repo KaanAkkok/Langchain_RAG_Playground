@@ -20,3 +20,6 @@ wheels/
 # dev
 *.pytest_cache/
 *.ruff_cache/
+
+# data
+data/documents

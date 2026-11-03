@@ -20,6 +20,18 @@ class RetrievalService:
         self.vector_store = vector_store
         self.collection_name = collection_name
 
+    async def is_collection_exists(self, collection_name: str) -> bool:
+        try:
+            exists = await self.vector_store.is_collection_exists(collection_name)
+            logger.info(
+                f"Collection '{collection_name}' existence check: {exists}"
+            )
+            return exists
+        except Exception as e:
+            raise RuntimeError(
+                f"Error occurred while checking collection existence: {e}"
+            ) from e
+    
     async def store_documents(self, documents: list[Document]) -> int:
         if not documents:
             raise ValueError("Documents list cannot be empty")

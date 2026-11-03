@@ -8,3 +8,4 @@ doc/
 .ruff_cache/
 *.pytest_cache/
 *.ruff_cache/
+data/documents

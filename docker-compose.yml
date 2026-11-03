@@ -30,6 +30,7 @@ services:
     volumes:
       - ./data/raw_documents:/app/data/raw_documents
       - ./data/saved_documents:/app/data/saved_documents
+      - ./data/evaluation:/app/data/evaluation
       - hf_cache:/app/.cache/huggingface
 
 volumes:

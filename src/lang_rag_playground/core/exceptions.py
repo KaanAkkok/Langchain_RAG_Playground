@@ -14,6 +14,10 @@ class DocumentChunkingError(RAGError):
     """Document chunking failed."""
 
 
+class RetrievalError(RAGError):
+    """Document retrieval failed."""
+
+
 class RerankerError(RAGError):
     """Reranking failed."""
 
@@ -32,3 +36,7 @@ class MemoryRecallError(RAGError):
 
 class LLMGenerationError(RAGError):
     """LLM generation failed."""
+
+
+class InvalidGroundTruthSchemaError(RAGError):
+    """Invalid ground truth data provided."""
