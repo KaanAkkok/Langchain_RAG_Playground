@@ -206,14 +206,7 @@ class Guardrails:
         # Adım 1: self._is_prompt_injection(message) kontrolü
         # Adım 2: injection ise logla ve is_input_safe=False, message=None dön
         # Adım 3: değilse is_input_safe=True ve self._mask_message(message) ile dön
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        if self._is_prompt_injection(message):
-            logger.warning("Prompt injection detected in user message.")
-            return InputGuardrailResult(is_input_safe=False, message=None)
-        return InputGuardrailResult(
-            is_input_safe=True, message=self._mask_message(message)
-        )
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 4): Öğrenci Rehberi > Görev 4")
 
     def output_guardrail(self, text: str) -> str:
         """Model ciktisindaki kisisel verileri maskeler.

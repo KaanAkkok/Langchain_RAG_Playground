@@ -16,11 +16,7 @@ def route_after_input_guardrails(state: AgentState) -> Literal["blocked", "inten
     # TODO (Görev 6): Öğrenci Rehberi > Görev 6
     # Adım 1: state.get("is_input_safe") yoksa veya False ise "blocked" dön.
     # Adım 2: Aksi halde "intent" dön.
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    if not state.get("is_input_safe"):
-        return "blocked"
-    return "intent"
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 6): Öğrenci Rehberi > Görev 6")
 
 
 # Workflow graph only: the agentic graph lets the assistant decide whether to search.
@@ -36,11 +32,7 @@ def route_after_memory_recall(state: AgentState) -> Literal["retrieval", "assist
     # TODO (Görev 6): Öğrenci Rehberi > Görev 6
     # Adım 1: intent "knowledge_question" ise "retrieval" dön.
     # Adım 2: Aksi halde "assistant" dön.
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    if state.get("intent") == "knowledge_question":
-        return "retrieval"
-    return "assistant"
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 6): Öğrenci Rehberi > Görev 6")
 
 
 def route_after_judge(
@@ -59,15 +51,7 @@ def route_after_judge(
     """
     # TODO (Görev 6): Öğrenci Rehberi > Görev 6
     # Adım 1-4: yukaridaki karar sirasini uygula (sira onemli).
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    if state.get("judge_blocked"):
-        return "blocked"
-    if state.get("judge_passed"):
-        return "output_guardrails"
-    if state.get("retry_count", 0) >= max_retries:
-        return "output_guardrails"
-    return "assistant"
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 6): Öğrenci Rehberi > Görev 6")
 
 
 def route_after_output_guardrails(
@@ -84,8 +68,4 @@ def route_after_output_guardrails(
     # TODO (Görev 6): Öğrenci Rehberi > Görev 6
     # Adım 1: len(state["messages"]) % batch_size == 0 ise "memory_extract" dön.
     # Adım 2: Aksi halde "__end__" dön.
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    if len(state["messages"]) % batch_size == 0:
-        return "memory_extract"
-    return "__end__"
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 6): Öğrenci Rehberi > Görev 6")

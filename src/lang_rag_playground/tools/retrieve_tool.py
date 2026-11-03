@@ -44,42 +44,11 @@ def make_search_documents_tool(
         # Adım 2: Aday yoksa NOT_FOUND_ANSWER döndür.
         # Adım 3: rerank_documents ile yeniden sırala; RerankerError olursa candidate_docs[:top_k] kullan.
         # Adım 4: Hiç belge kalmadıysa NOT_FOUND_ANSWER döndür.
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        candidate_docs = await retrieval_service.search(query=query, top_k=candidates)
-        if not candidate_docs:
-            logger.info(f"search_documents('{query}'): no candidates.")
-            return NOT_FOUND_ANSWER
-        try:
-            documents = await rerank_documents(
-                chain=reranker_chain,
-                query=query,
-                candidates=candidate_docs,
-                top_k=top_k,
-                min_score=min_score,
-            )
-        except RerankerError as e:
-            logger.warning(f"Rerank failed, falling back to vector order: {e}")
-            documents = candidate_docs[:top_k]
-        if not documents:
-            logger.info(
-                f"search_documents('{query}'): no candidate passed min_score={min_score}."
-            )
-            return NOT_FOUND_ANSWER
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 8): Öğrenci Rehberi > Görev 8 (aday getirme ve rerank)")
         # TODO (Görev 8): Öğrenci Rehberi > Görev 8 (kaynak biriktirme)
         # Adım 1: start = şimdiye kadar biriken kaynak sayısı + 1 (runtime.context.sources).
         # Adım 2: documents'ı runtime.context.sources'a ekle (extend).
         # Adım 3: format_sources(documents, start=start) ile metni üret ve 'Bulunan kaynaklar:' başlığıyla döndür.
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        start = len(runtime.context.sources) + 1
-        runtime.context.sources.extend(documents)
-        scores = [doc.metadata.get("reranker_score") for doc in documents]
-        logger.info(
-            f"search_documents('{query}'): {len(candidate_docs)} candidates, kept {len(documents)} "
-            f"as sources [{start}-{start + len(documents) - 1}], scores: {scores}"
-        )
-        formatted_sources = format_sources(documents, start=start)
-        return f"Bulunan kaynaklar:\n\n{formatted_sources}"
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 8): Öğrenci Rehberi > Görev 8 (kaynak biriktirme)")
 
     return search_documents

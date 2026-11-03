@@ -72,26 +72,7 @@ class DocumentChunker:
         # Adım 1: self.header_splitter = MarkdownHeaderTextSplitter(HEADERS, strip_headers=...)
         # Adım 2: self.semantic_splitter = SemanticChunker(embedding_model, eşik tipi/miktarı, min_chunk_size, buffer_size)
         # Adım 3: self.size_splitter = RecursiveCharacterTextSplitter(chunk_size, chunk_overlap, SENTENCE_SPLIT_RE regex ayraçları)
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        self.header_splitter = MarkdownHeaderTextSplitter(
-            headers_to_split_on=HEADERS,
-            strip_headers=header_splitter_strip_headers,
-        )
-        self.semantic_splitter = SemanticChunker(
-            embeddings=embedding_model,
-            breakpoint_threshold_type=semantic_chunker_threshold_type,
-            breakpoint_threshold_amount=semantic_chunker_breakpoint_threshold_amount,
-            min_chunk_size=min_chunk_chars,
-            buffer_size=buffer_size,
-        )
-        self.size_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=max_chunk_chars,
-            chunk_overlap=overlap_chars,
-            is_separator_regex=True,
-            separators=SENTENCE_SPLIT_RE,
-            length_function=len,
-        )
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 1): Öğrenci Rehberi > Görev 1")
 
     def _validate_config(self) -> None:
         if self.embedding_model is None:

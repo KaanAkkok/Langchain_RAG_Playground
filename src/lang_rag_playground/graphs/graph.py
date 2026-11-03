@@ -56,53 +56,11 @@ def workflow_graph(
     # Adım 1: RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS) oluştur.
     # Adım 2: StateGraph(AgentState, context_schema=Context) ile builder kur.
     # Adım 3: 9 düğümü add_node ile ekle (LLM düğümlerine retry_policy ver).
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
-
-    builder = StateGraph(AgentState, context_schema=Context)
-    builder.add_node("input_guardrails", make_input_guardrails_node(guardrails_service))
-    builder.add_node(
-        "intent", make_intent_node(intent_chain), retry_policy=retry_policy
-    )
-    builder.add_node(
-        "retrieval", make_retrieval_node(retrieval_service), retry_policy=retry_policy
-    )
-    builder.add_node(
-        "reranker", make_reranker_node(reranker_chain), retry_policy=retry_policy
-    )
-    builder.add_node(
-        "assistant",
-        make_assistant_node(assistant_chain),
-        retry_policy=retry_policy,
-    )
-    builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
-    builder.add_node(
-        "output_guardrails", make_output_guardrails_node(guardrails_service)
-    )
-    builder.add_node("memory_recall", make_memory_recall_node())
-    builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
-    builder.add_node("blocked", blocked_response_node)
-
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 7): Öğrenci Rehberi > Görev 7 (workflow_graph, düğümler)")
     # TODO (Görev 7): Öğrenci Rehberi > Görev 7 (workflow_graph, kenarlar)
     # Adım 4: Sabit kenarlar (add_edge) ve koşullu kenarlar (add_conditional_edges).
     # Adım 5: builder.compile(checkpointer=checkpointer, store=store) dön.
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    builder.add_edge(START, "input_guardrails")
-    builder.add_edge("intent", "memory_recall")
-    builder.add_edge("retrieval", "reranker")
-    builder.add_edge("reranker", "assistant")
-    builder.add_edge("assistant", "judge")
-    builder.add_edge("blocked", END)
-    builder.add_edge("memory_extract", END)
-
-    builder.add_conditional_edges("input_guardrails", route_after_input_guardrails)
-    builder.add_conditional_edges("memory_recall", route_after_memory_recall)
-    builder.add_conditional_edges("output_guardrails", route_after_output_guardrails)
-    builder.add_conditional_edges("judge", route_after_judge)
-
-    return builder.compile(checkpointer=checkpointer, store=store)
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 7): Öğrenci Rehberi > Görev 7 (workflow_graph, kenarlar)")
 
 
 def agentic_graph(
@@ -124,45 +82,11 @@ def agentic_graph(
     # Adım 1: RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS) oluştur.
     # Adım 2: StateGraph(AgentState, context_schema=Context) ile builder kur.
     # Adım 3: 8 düğümü (retrieval ve reranker YOK) add_node ile ekle (LLM düğümlerine retry_policy ver).
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
-
-    builder = StateGraph(AgentState, context_schema=Context)
-    builder.add_node("input_guardrails", make_input_guardrails_node(guardrails_service))
-    builder.add_node(
-        "intent", make_intent_node(intent_chain), retry_policy=retry_policy
-    )
-    builder.add_node(
-        "assistant",
-        make_agent_assistant_node(assistant_agent),
-        retry_policy=retry_policy,
-    )
-    builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
-    builder.add_node(
-        "output_guardrails", make_output_guardrails_node(guardrails_service)
-    )
-    builder.add_node("memory_recall", make_memory_recall_node())
-    builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
-    builder.add_node("blocked", blocked_response_node)
-
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agentic_graph, düğümler)")
     # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agentic_graph, kenarlar)
     # Adım 4: Sabit kenarlar (add_edge) ve koşullu kenarlar (add_conditional_edges).
     # Adım 5: builder.compile(checkpointer=checkpointer, store=store) dön.
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    builder.add_edge(START, "input_guardrails")
-    builder.add_edge("intent", "memory_recall")
-    builder.add_edge("memory_recall", "assistant")
-    builder.add_edge("assistant", "judge")
-    builder.add_edge("blocked", END)
-    builder.add_edge("memory_extract", END)
-
-    builder.add_conditional_edges("input_guardrails", route_after_input_guardrails)
-    builder.add_conditional_edges("output_guardrails", route_after_output_guardrails)
-    builder.add_conditional_edges("judge", route_after_judge)
-
-    return builder.compile(checkpointer=checkpointer, store=store)
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agentic_graph, kenarlar)")
 
 
 if __name__ == "__main__":

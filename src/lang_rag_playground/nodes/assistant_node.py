@@ -150,34 +150,7 @@ def build_assistant_agent(
     # Adım 1: build_chat_model ile LLM oluştur.
     # Adım 2: Middleware listesini kur (docstring'deki değerler).
     # Adım 3: create_agent(model=..., tools=..., response_format=..., context_schema=..., middleware=...) döndür.
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    llm = build_chat_model(model_name, temperature=temperature)
-    middleware_list = cast(
-        Sequence[Any],
-        [
-            ToolCallLimitMiddleware(
-                tool_name=SEARCH_TOOL_NAME, run_limit=settings.MAX_TOOL_CALLS
-            ),
-            ToolCallLimitMiddleware(
-                tool_name=DATE_TOOL_NAME, run_limit=settings.MAX_TOOL_CALLS
-            ),
-            ToolRetryMiddleware(
-                max_retries=settings.TOOL_MAX_RETRIES,
-                on_failure=_search_tool_failure_message,
-            ),
-        ],
-    )
-    return create_agent(
-        model=llm,
-        tools=[
-            make_search_documents_tool(retrieval_service, reranker_chain),
-            get_today_date,
-        ],
-        response_format=ToolStrategy(AssistantResponse),
-        context_schema=AgentContext,
-        middleware=middleware_list,
-    )
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 9): Öğrenci Rehberi > Görev 9")
 
 
 def make_agent_assistant_node(
@@ -191,16 +164,7 @@ def make_agent_assistant_node(
         # Adım 1: AGENT_ASSISTANT_TEMPLATE.format_messages ile mesajları üret
         #         (memories, intent, resolved_query, feedback, history).
         # Adım 2: Boş bir AgentContext() oluştur (araç kaynakları buraya birikir).
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        messages = AGENT_ASSISTANT_TEMPLATE.format_messages(
-            memories=_format_memories(state),
-            intent=state["intent"],
-            resolved_query=state.get("resolved_query") or last_user_msg.text,
-            feedback=format_feedback(state.get("feedback")),
-            history=history,
-        )
-        agent_context = AgentContext()
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)")
         if state.get("feedback"):
             logger.info(
                 f"Rerunning agent with judge feedback (attempt {state.get('retry_count', 0) + 1})."
@@ -208,12 +172,7 @@ def make_agent_assistant_node(
         try:
             # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)
             # Adım 1: agent.ainvoke({"messages": messages}, context=agent_context) çağır ve sonucu `result`a ata.
-            # --- ÇÖZÜM BAŞLANGIÇ ---
-            result = await agent.ainvoke(
-                {"messages": messages},
-                context=agent_context,
-            )
-            # --- ÇÖZÜM BİTİŞ ---
+            raise NotImplementedError("TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)")
         except GraphRecursionError:
             logger.warning(
                 "Agent hit the recursion limit; returning the not-found answer."
@@ -236,8 +195,6 @@ def make_agent_assistant_node(
                 response = AssistantResponse(answer=NOT_FOUND_ANSWER, cited_sources=[])
         # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)
         # Adım 2: _assistant_update(response, agent_context.sources) sonucunu döndür.
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        return _assistant_update(response, agent_context.sources)
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)")
 
     return assistant_node

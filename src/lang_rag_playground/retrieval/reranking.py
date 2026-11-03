@@ -59,25 +59,4 @@ async def rerank_documents(
     # Adım 2: score < min_score, tekrar eden id ve id >= len(candidates) olanları atla
     # Adım 3: doc.model_copy ile metadata'ya "reranker_score" ekle
     # Adım 4: ilk top_k belgeyi döndür
-    # --- ÇÖZÜM BAŞLANGIÇ ---
-    reranked_documents = []
-    seen_ids = set()
-    sorted_scores = sorted(
-        response.scores,
-        key=lambda item: item.score,
-        reverse=True,
-    )
-    for item in sorted_scores:
-        if item.score < min_score:
-            continue
-        if item.id in seen_ids or item.id >= len(candidates):
-            continue
-        seen_ids.add(item.id)
-        doc = candidates[item.id]
-        updated_metadata = {
-            **doc.metadata,
-            "reranker_score": item.score,
-        }
-        reranked_documents.append(doc.model_copy(update={"metadata": updated_metadata}))
-    return reranked_documents[:top_k]
-    # --- ÇÖZÜM BİTİŞ ---
+    raise NotImplementedError("TODO (Görev 3): Öğrenci Rehberi > Görev 3")

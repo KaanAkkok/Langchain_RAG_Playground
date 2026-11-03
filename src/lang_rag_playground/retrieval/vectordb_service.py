@@ -51,17 +51,7 @@ class AsyncQdrantVectorDBService:
         # Adım 1: QdrantVectorStore(...) oluştur (client, collection_name, embedding, sparse_embedding)
         # Adım 2: retrieval_mode=RetrievalMode.HYBRID
         # Adım 3: vector_name="dense", sparse_vector_name="sparse"
-        # --- ÇÖZÜM BAŞLANGIÇ ---
-        return QdrantVectorStore(
-            client=self.client,
-            collection_name=collection_name,
-            embedding=self.embedding,
-            sparse_embedding=self.sparse_embedding,
-            retrieval_mode=RetrievalMode.HYBRID,
-            vector_name="dense",
-            sparse_vector_name="sparse",
-        )
-        # --- ÇÖZÜM BİTİŞ ---
+        raise NotImplementedError("TODO (Görev 2): Öğrenci Rehberi > Görev 2")
 
     @staticmethod
     def _point_id(doc: Document) -> str:
