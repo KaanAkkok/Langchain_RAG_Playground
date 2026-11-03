@@ -34,6 +34,37 @@ APP_CSS = """
 #graph-diagram .node text {
     fill: #111827 !important;
 }
+#thread-list .wrap {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 2px;
+}
+#thread-list label {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    font-weight: normal;
+}
+#thread-list label span {
+    margin-left: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+#thread-list label:hover {
+    background: var(--background-fill-secondary);
+}
+#thread-list label.selected {
+    background: var(--border-color-primary);
+    color: var(--body-text-color);
+}
+#thread-list input[type="radio"] {
+    display: none;
+}
 """
 
 
@@ -170,10 +201,13 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
         with gr.Column(visible=False) as workspace:
             with gr.Sidebar(open=False):
                 new_chat_btn = gr.Button("+ Yeni Sohbet", variant="primary")
+                gr.Markdown("**Geçmiş Sohbetler**")
                 thread_radio = gr.Radio(
                     label="Geçmiş Sohbetler",
                     choices=[],
                     interactive=True,
+                    container=False,
+                    elem_id="thread-list",
                 )
 
             with gr.Row(scale=1, equal_height=True):
