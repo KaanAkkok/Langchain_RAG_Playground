@@ -133,6 +133,24 @@ def build_assistant_agent(
     model_name: str = settings.GEMINI_ASSISTANT_MODEL,
     temperature: float = settings.ASSISTANT_TEMPERATURE,
 ) -> Runnable:
+    """Doküman arama ve tarih araçlarını kullanan agent'ı kurar.
+
+    Girdi: retrieval_service, reranker_chain, model_name, temperature.
+    Çıktı: create_agent ile oluşturulmuş Runnable (agent grafı).
+
+    Adımlar / parametre değerleri:
+        - Araçlar: make_search_documents_tool(retrieval_service, reranker_chain) ve get_today_date.
+        - ToolCallLimitMiddleware: SEARCH_TOOL_NAME ve DATE_TOOL_NAME için ayrı ayrı,
+          run_limit=settings.MAX_TOOL_CALLS.
+        - ToolRetryMiddleware: max_retries=settings.TOOL_MAX_RETRIES,
+          on_failure=_search_tool_failure_message.
+        - response_format=ToolStrategy(AssistantResponse), context_schema=AgentContext.
+    """
+    # TODO (Görev 9): Öğrenci Rehberi > Görev 9
+    # Adım 1: build_chat_model ile LLM oluştur.
+    # Adım 2: Middleware listesini kur (docstring'deki değerler).
+    # Adım 3: create_agent(model=..., tools=..., response_format=..., context_schema=..., middleware=...) döndür.
+    # --- ÇÖZÜM BAŞLANGIÇ ---
     llm = build_chat_model(model_name, temperature=temperature)
     middleware_list = cast(
         Sequence[Any],
@@ -159,6 +177,7 @@ def build_assistant_agent(
         context_schema=AgentContext,
         middleware=middleware_list,
     )
+    # --- ÇÖZÜM BİTİŞ ---
 
 
 def make_agent_assistant_node(
@@ -168,6 +187,11 @@ def make_agent_assistant_node(
     async def assistant_node(state: AgentState) -> dict:
         last_user_msg = get_user_last_message(state)
         history = trim_history(state, max_history_tokens) or [last_user_msg]
+        # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)
+        # Adım 1: AGENT_ASSISTANT_TEMPLATE.format_messages ile mesajları üret
+        #         (memories, intent, resolved_query, feedback, history).
+        # Adım 2: Boş bir AgentContext() oluştur (araç kaynakları buraya birikir).
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         messages = AGENT_ASSISTANT_TEMPLATE.format_messages(
             memories=_format_memories(state),
             intent=state["intent"],
@@ -175,16 +199,21 @@ def make_agent_assistant_node(
             feedback=format_feedback(state.get("feedback")),
             history=history,
         )
+        agent_context = AgentContext()
+        # --- ÇÖZÜM BİTİŞ ---
         if state.get("feedback"):
             logger.info(
                 f"Rerunning agent with judge feedback (attempt {state.get('retry_count', 0) + 1})."
             )
-        agent_context = AgentContext()
         try:
+            # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)
+            # Adım 1: agent.ainvoke({"messages": messages}, context=agent_context) çağır ve sonucu `result`a ata.
+            # --- ÇÖZÜM BAŞLANGIÇ ---
             result = await agent.ainvoke(
                 {"messages": messages},
                 context=agent_context,
             )
+            # --- ÇÖZÜM BİTİŞ ---
         except GraphRecursionError:
             logger.warning(
                 "Agent hit the recursion limit; returning the not-found answer."
@@ -205,6 +234,10 @@ def make_agent_assistant_node(
                     "Agent returned no answer; returning the not-found answer."
                 )
                 response = AssistantResponse(answer=NOT_FOUND_ANSWER, cited_sources=[])
+        # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agent düğümü)
+        # Adım 2: _assistant_update(response, agent_context.sources) sonucunu döndür.
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         return _assistant_update(response, agent_context.sources)
+        # --- ÇÖZÜM BİTİŞ ---
 
     return assistant_node

@@ -52,6 +52,11 @@ def workflow_graph(
     judge_chain = build_judge_chain()
     memory_chain = build_memory_extract_chain()
 
+    # TODO (Görev 7): Öğrenci Rehberi > Görev 7 (workflow_graph, düğümler)
+    # Adım 1: RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS) oluştur.
+    # Adım 2: StateGraph(AgentState, context_schema=Context) ile builder kur.
+    # Adım 3: 9 düğümü add_node ile ekle (LLM düğümlerine retry_policy ver).
+    # --- ÇÖZÜM BAŞLANGIÇ ---
     retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
 
     builder = StateGraph(AgentState, context_schema=Context)
@@ -78,6 +83,11 @@ def workflow_graph(
     builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
     builder.add_node("blocked", blocked_response_node)
 
+    # --- ÇÖZÜM BİTİŞ ---
+    # TODO (Görev 7): Öğrenci Rehberi > Görev 7 (workflow_graph, kenarlar)
+    # Adım 4: Sabit kenarlar (add_edge) ve koşullu kenarlar (add_conditional_edges).
+    # Adım 5: builder.compile(checkpointer=checkpointer, store=store) dön.
+    # --- ÇÖZÜM BAŞLANGIÇ ---
     builder.add_edge(START, "input_guardrails")
     builder.add_edge("intent", "memory_recall")
     builder.add_edge("retrieval", "reranker")
@@ -92,6 +102,7 @@ def workflow_graph(
     builder.add_conditional_edges("judge", route_after_judge)
 
     return builder.compile(checkpointer=checkpointer, store=store)
+    # --- ÇÖZÜM BİTİŞ ---
 
 
 def agentic_graph(
@@ -109,6 +120,11 @@ def agentic_graph(
     judge_chain = build_judge_chain()
     memory_chain = build_memory_extract_chain()
 
+    # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agentic_graph, düğümler)
+    # Adım 1: RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS) oluştur.
+    # Adım 2: StateGraph(AgentState, context_schema=Context) ile builder kur.
+    # Adım 3: 8 düğümü (retrieval ve reranker YOK) add_node ile ekle (LLM düğümlerine retry_policy ver).
+    # --- ÇÖZÜM BAŞLANGIÇ ---
     retry_policy = RetryPolicy(max_attempts=settings.LLM_MAX_ATTEMPTS)
 
     builder = StateGraph(AgentState, context_schema=Context)
@@ -129,6 +145,11 @@ def agentic_graph(
     builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
     builder.add_node("blocked", blocked_response_node)
 
+    # --- ÇÖZÜM BİTİŞ ---
+    # TODO (Görev 10): Öğrenci Rehberi > Görev 10 (agentic_graph, kenarlar)
+    # Adım 4: Sabit kenarlar (add_edge) ve koşullu kenarlar (add_conditional_edges).
+    # Adım 5: builder.compile(checkpointer=checkpointer, store=store) dön.
+    # --- ÇÖZÜM BAŞLANGIÇ ---
     builder.add_edge(START, "input_guardrails")
     builder.add_edge("intent", "memory_recall")
     builder.add_edge("memory_recall", "assistant")
@@ -141,6 +162,7 @@ def agentic_graph(
     builder.add_conditional_edges("judge", route_after_judge)
 
     return builder.compile(checkpointer=checkpointer, store=store)
+    # --- ÇÖZÜM BİTİŞ ---
 
 
 if __name__ == "__main__":

@@ -190,13 +190,39 @@ class Guardrails:
         return message.model_copy(update=update)
 
     def input_guardrail(self, message: BaseMessage) -> InputGuardrailResult:
+        """Kullanici mesajini guvenlik kontrolunden gecirir.
+
+        Girdi: BaseMessage (kullanici mesaji).
+        Cikti: InputGuardrailResult(is_input_safe, message).
+        Adimlar:
+            1. _is_prompt_injection ile mesaji kontrol et.
+            2. Injection varsa logger.warning yaz ve
+               InputGuardrailResult(is_input_safe=False, message=None) dondur.
+            3. Guvenliyse _mask_message(message) sonucuyla
+               InputGuardrailResult(is_input_safe=True, message=...) dondur.
+               (_mask_message degisiklik yoksa None dondurur; oldugu gibi birak.)
+        """
+        # TODO (Görev 4): Öğrenci Rehberi > Görev 4
+        # Adım 1: self._is_prompt_injection(message) kontrolü
+        # Adım 2: injection ise logla ve is_input_safe=False, message=None dön
+        # Adım 3: değilse is_input_safe=True ve self._mask_message(message) ile dön
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         if self._is_prompt_injection(message):
             logger.warning("Prompt injection detected in user message.")
             return InputGuardrailResult(is_input_safe=False, message=None)
         return InputGuardrailResult(
             is_input_safe=True, message=self._mask_message(message)
         )
+        # --- ÇÖZÜM BİTİŞ ---
 
     def output_guardrail(self, text: str) -> str:
+        """Model ciktisindaki kisisel verileri maskeler.
+
+        Girdi: str (uretilen cevap).
+        Cikti: str (PII maskelenmis cevap).
+        Adimlar:
+            1. self._process_text(text) (maskeli_metin, eslesmeler) dondurur.
+            2. Eslesmeleri yok sayip sadece maskeli metni dondur.
+        """
         masked_text, _ = self._process_text(text)
         return masked_text

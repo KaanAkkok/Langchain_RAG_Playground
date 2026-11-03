@@ -26,8 +26,13 @@ def build_intent_chain(
     model_name: str = settings.GEMINI_INTENT_MODEL,
     temperature: float = settings.INTENT_TEMPERATURE,
 ) -> Runnable:
+    # TODO (Görev 5): Öğrenci Rehberi > Görev 5
+    # Adım 1: build_chat_model(model_name, temperature=temperature) ile LLM oluştur
+    # Adım 2: INTENT_TEMPLATE | llm.with_structured_output(Intent) zincirini döndür
+    # --- ÇÖZÜM BAŞLANGIÇ ---
     llm = build_chat_model(model_name, temperature=temperature)
     return INTENT_TEMPLATE | llm.with_structured_output(Intent)
+    # --- ÇÖZÜM BİTİŞ ---
 
 
 def make_intent_node(
@@ -36,18 +41,27 @@ def make_intent_node(
     min_confidence: float = settings.INTENT_MIN_CONFIDENCE,
 ):
     async def intent_node(state: AgentState) -> dict:
+        # TODO (Görev 5): Öğrenci Rehberi > Görev 5
+        # Adım 3: son kullanıcı mesajını al, geçmişi trim_history ile kırp
+        # Adım 4: chain.ainvoke({"input_text": ..., "history": ...}) çağır
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         last_user_msg = get_user_last_message(state)
         history = trim_history(state, max_tokens=max_history_tokens)
         response = await chain.ainvoke(
             {"input_text": last_user_msg.text, "history": history}
         )
+        # --- ÇÖZÜM BİTİŞ ---
         if not isinstance(response, Intent):
             raise TypeError("The response is not of type Intent class.")
+        # TODO (Görev 5): Öğrenci Rehberi > Görev 5
+        # Adım 5: confidence < min_confidence ise intent'i "needs_clarification" yap
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         intent = (
             response.intent
             if response.confidence >= min_confidence
             else "needs_clarification"
         )
+        # --- ÇÖZÜM BİTİŞ ---
         if intent != response.intent:
             logger.warning(
                 f"Low intent confidence ({response.confidence:.2f} < {min_confidence}): "
@@ -57,10 +71,14 @@ def make_intent_node(
             f"Intent: {intent} (confidence {response.confidence:.2f}), "
             f"resolved query: '{response.resolved_query}'"
         )
+        # TODO (Görev 5): Öğrenci Rehberi > Görev 5
+        # Adım 6: intent, intent_confidence, resolved_query alanlarını döndür
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         return {
             "intent": intent,
             "intent_confidence": response.confidence,
             "resolved_query": response.resolved_query,
         }
+        # --- ÇÖZÜM BİTİŞ ---
 
     return intent_node

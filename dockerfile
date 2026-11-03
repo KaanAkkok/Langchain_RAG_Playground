@@ -22,8 +22,8 @@ RUN uv sync --frozen --no-install-project --no-dev
 COPY src ./src
 COPY data/evaluation ./data/evaluation
 RUN uv sync --frozen --no-dev --no-editable
-RUN mkdir -p data/raw_documents data/saved_documents data/evaluation
+RUN mkdir -p data/documents/raw_documents data/documents/saved_documents data/evaluation
 
 EXPOSE 7860
 
-CMD ["python", "-m", "lang_rag_playground.ui.app"]
+CMD ["python", "-m", "lang_rag_playground.main"]

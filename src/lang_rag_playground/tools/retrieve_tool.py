@@ -39,6 +39,12 @@ def make_search_documents_tool(
         if not query or not query.strip():
             logger.warning("search_documents called with an empty query.")
             return NOT_FOUND_ANSWER
+        # TODO (Görev 8): Öğrenci Rehberi > Görev 8 (aday getirme ve rerank)
+        # Adım 1: retrieval_service.search ile `candidates` adet aday getir (await).
+        # Adım 2: Aday yoksa NOT_FOUND_ANSWER döndür.
+        # Adım 3: rerank_documents ile yeniden sırala; RerankerError olursa candidate_docs[:top_k] kullan.
+        # Adım 4: Hiç belge kalmadıysa NOT_FOUND_ANSWER döndür.
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         candidate_docs = await retrieval_service.search(query=query, top_k=candidates)
         if not candidate_docs:
             logger.info(f"search_documents('{query}'): no candidates.")
@@ -59,6 +65,12 @@ def make_search_documents_tool(
                 f"search_documents('{query}'): no candidate passed min_score={min_score}."
             )
             return NOT_FOUND_ANSWER
+        # --- ÇÖZÜM BİTİŞ ---
+        # TODO (Görev 8): Öğrenci Rehberi > Görev 8 (kaynak biriktirme)
+        # Adım 1: start = şimdiye kadar biriken kaynak sayısı + 1 (runtime.context.sources).
+        # Adım 2: documents'ı runtime.context.sources'a ekle (extend).
+        # Adım 3: format_sources(documents, start=start) ile metni üret ve 'Bulunan kaynaklar:' başlığıyla döndür.
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         start = len(runtime.context.sources) + 1
         runtime.context.sources.extend(documents)
         scores = [doc.metadata.get("reranker_score") for doc in documents]
@@ -68,5 +80,6 @@ def make_search_documents_tool(
         )
         formatted_sources = format_sources(documents, start=start)
         return f"Bulunan kaynaklar:\n\n{formatted_sources}"
+        # --- ÇÖZÜM BİTİŞ ---
 
     return search_documents

@@ -317,15 +317,3 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
 
     return demo
 
-
-def main() -> None:
-    demo = create_app()
-    demo.queue().launch(
-        server_name=settings.GRADIO_HOST,
-        server_port=settings.GRADIO_PORT,
-        css=APP_CSS,
-    )
-
-
-if __name__ == "__main__":
-    main()

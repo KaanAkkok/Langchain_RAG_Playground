@@ -40,6 +40,18 @@ class AsyncQdrantVectorDBService:
         self.sparse_embedding = FastEmbedSparse(model_name="Qdrant/bm25")
 
     def get_vector_store(self, collection_name: str) -> QdrantVectorStore:
+        """Koleksiyon icin hibrit (dense + sparse) bir QdrantVectorStore dondurur.
+
+        Girdi: collection_name (str).
+        Cikti: QdrantVectorStore.
+        Adimlar: client/embedding/sparse_embedding'i ver, HYBRID modunu sec,
+        vektor adlarini "dense" ve "sparse" yap.
+        """
+        # TODO (Görev 2): Öğrenci Rehberi > Görev 2
+        # Adım 1: QdrantVectorStore(...) oluştur (client, collection_name, embedding, sparse_embedding)
+        # Adım 2: retrieval_mode=RetrievalMode.HYBRID
+        # Adım 3: vector_name="dense", sparse_vector_name="sparse"
+        # --- ÇÖZÜM BAŞLANGIÇ ---
         return QdrantVectorStore(
             client=self.client,
             collection_name=collection_name,
@@ -49,6 +61,7 @@ class AsyncQdrantVectorDBService:
             vector_name="dense",
             sparse_vector_name="sparse",
         )
+        # --- ÇÖZÜM BİTİŞ ---
 
     @staticmethod
     def _point_id(doc: Document) -> str:
@@ -72,6 +85,16 @@ class AsyncQdrantVectorDBService:
             ) from e
 
     async def create_collection(self, collection_name: str) -> bool:
+        """Koleksiyon yoksa dense + sparse yapilandirmasiyla olusturur.
+
+        Girdi: collection_name (str).
+        Cikti: Koleksiyon varsa False; yeni olusturulduysa client.create_collection sonucu.
+        Adimlar:
+          1. Embedding ile boyutu olc: len(await self.embedding.aembed_query("dimension probe"))
+          2. "dense": VectorParams(size=boyut, distance=COSINE)
+          3. "sparse": SparseVectorParams(index=SparseIndexParams(on_disk=False))
+          4. Bloklayan client cagrisini asyncio.to_thread ile calistir.
+        """
         exist = await self.is_collection_exists(collection_name)
         if exist:
             return False
@@ -98,6 +121,18 @@ class AsyncQdrantVectorDBService:
         collection_name: str,
         documents: list[Document],
     ) -> int:
+        """Dokumanlari deterministik id'lerle Qdrant'a yazar.
+
+        Girdi: collection_name, documents.
+        Cikti: Yazilan dokuman sayisi (int).
+        Adimlar:
+          1. vector_store = self.get_vector_store(collection_name)
+          2. Her dokuman icin self._point_id(doc) ile id listesi uret
+          3. await vector_store.aadd_documents(documents, ids=point_ids)
+          4. Hata olursa RuntimeError("Failed to store documents in Qdrant: ...") firlat
+          5. Dönen id sayisi dokuman sayisina esit degilse veya 0 ise RuntimeError firlat
+          6. len(ids) dondur
+        """
         vector_store = self.get_vector_store(collection_name)
         point_ids = [self._point_id(doc) for doc in documents]
         try:
@@ -118,6 +153,16 @@ class AsyncQdrantVectorDBService:
         collection_name: str,
         top_k: int,
     ) -> list[Document]:
+        """Hibrit arama yapar ve her dokumanin metadata'sina "score" ekler.
+
+        Girdi: query, collection_name, top_k.
+        Cikti: Skorlu Document listesi (koleksiyon yoksa bos liste).
+        Adimlar:
+          1. Koleksiyon yoksa [] dondur (client.collection_exists, asyncio.to_thread ile)
+          2. vector_store.asimilarity_search_with_score(query=query, k=top_k)
+          3. Hata olursa RuntimeError("Failed to search in Qdrant: ...") firlat
+          4. doc.model_copy(update={"metadata": {**doc.metadata, "score": score}})
+        """
         if query is None or query.strip() == "":
             raise ValueError("Query cannot be empty")
         if collection_name is None or collection_name.strip() == "":
