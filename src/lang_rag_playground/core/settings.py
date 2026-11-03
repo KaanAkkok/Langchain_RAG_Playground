@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     LONG_TERM_MEMORY_BATCH_SIZE: int = 10
     LONG_TERM_MEMORY_SEARCH_LIMIT: int = 5
     LONG_TERM_MEMORY_CONFIDENCE_THRESHOLD: float = 0.7
-    LONG_TERM_MEMORY_MIN_SCORE: float = 0.5
+    LONG_TERM_MEMORY_MIN_SCORE: float = 0.1
 
     RAW_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "raw_documents")
     SAVED_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "saved_documents")

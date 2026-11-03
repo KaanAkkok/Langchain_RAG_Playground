@@ -140,12 +140,12 @@ async def handle_submit(
         )
 
 
-def create_app(services: AppServices | None = None, user_id: str = "default_user") -> gr.Blocks:
+def create_app(services: AppServices | None = None) -> gr.Blocks:
     if services is None:
         services = build_app_services()
 
     with gr.Blocks(title="Agentic RAG Playground", fill_height=True) as demo:
-        user_id_state = gr.State(user_id)
+        user_id_state = gr.State("")
         thread_id_state = gr.State(new_thread_id)
 
         with gr.Column(visible=True, elem_id="welcome-screen") as welcome_screen:
@@ -160,7 +160,6 @@ def create_app(services: AppServices | None = None, user_id: str = "default_user
                 max_lines=1,
                 autofocus=True,
             )
-            user_id_state = gr.State(name_input.value)
             start_button = gr.Button("Başla", variant="primary")
 
         with gr.Column(visible=False) as workspace:

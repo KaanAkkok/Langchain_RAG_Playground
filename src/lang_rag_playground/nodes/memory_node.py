@@ -52,14 +52,22 @@ def make_memory_recall_node(
             logger.warning(f"Failed to search memories: {e}")
             return {"memories": []}
         if not items:
-            logger.info("No memories found for this user.")
+            logger.info(
+                "No memories found for user_id=%s, query=%r.",
+                runtime.context.user_id,
+                state["resolved_query"],
+            )
             return {"memories": []}
         memories = []
         for item in items:
             if item.score is not None and item.score >= min_score:
                 memories.append(item.value["content"])
         logger.info(
-            f"Recalled {len(memories)}/{len(items)} memories (min_score={min_score})."
+            "Recalled %s/%s memories for user_id=%s (min_score=%s).",
+            len(memories),
+            len(items),
+            runtime.context.user_id,
+            min_score,
         )
         return {"memories": memories}
 
