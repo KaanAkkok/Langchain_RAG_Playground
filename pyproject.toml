@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiofiles>=25.1.0",
-    "black>=26.10.1",
     "docling-slim[format-pdf-docling,models-local]>=2.142.1",
     "fastembed>=0.9.1",
     "gradio>=6.31.0",
@@ -20,13 +19,12 @@ dependencies = [
     "pydantic-settings>=2.16.1",
     "qdrant-client>=1.20.0",
     "rtree>=1.4.1",
-    "ruff>=0.17.3",
     "torch>=2.2.2",
     "torchvision>=0.29.1",
 ]
 
 [project.scripts]
-lang-rag-playground = "lang_rag_playground:main"
+lang-rag-playground = "lang_rag_playground.main:main"
 
 [build-system]
 requires = ["uv_build>=0.12.2,<0.13.0"]
@@ -45,4 +43,6 @@ explicit = true
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
+    "black>=26.10.1",
+    "ruff>=0.17.3",
 ]
