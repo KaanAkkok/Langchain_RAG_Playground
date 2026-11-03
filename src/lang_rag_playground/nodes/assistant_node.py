@@ -23,6 +23,7 @@ from lang_rag_playground.prompts.prompts import TOOL_PROMPT, ASSISTANT_PROMPT
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 from lang_rag_playground.schemas.assistant_schema import AssistantResponse
 from lang_rag_playground.services.llm import build_chat_model
+from lang_rag_playground.tools.date_tool import get_today_date
 from lang_rag_playground.tools.retrieve_tool import make_search_documents_tool
 
 logger = get_logger(__name__)
@@ -56,6 +57,8 @@ AGENT_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
     ]
 )
 NOT_FOUND_ANSWER = "Bu bilgiyi yüklenen dokümanlarda bulamadım."
+SEARCH_TOOL_NAME = "search_documents"
+DATE_TOOL_NAME = get_today_date.name
 
 
 def _format_memories(state: AgentState) -> str:
@@ -91,7 +94,7 @@ def build_assistant_chain(
     return WORKFLOW_ASSISTANT_TEMPLATE | llm.with_structured_output(AssistantResponse)
 
 
-def make_workflow_assistant_node(
+def make_assistant_node(
     chain: Runnable,
     max_history_tokens: int = settings.MAX_HISTORY_TOKENS,
 ):
@@ -119,7 +122,7 @@ def make_workflow_assistant_node(
     return assistant_node
 
 
-def _tool_failure_message(error: Exception) -> str:
+def _search_tool_failure_message(error: Exception) -> str:
     logger.error(f"Tool call failed after retries: {error}")
     return "Arama şu an yapılamıyor. Kullanıcıya dokümanlara şu an erişilemediğini söyle; bilgi uydurma."
 
@@ -135,17 +138,23 @@ def build_assistant_agent(
         Sequence[Any],
         [
             ToolCallLimitMiddleware(
-                tool_name="search_documents", run_limit=settings.MAX_TOOL_CALLS
+                tool_name=SEARCH_TOOL_NAME, run_limit=settings.MAX_TOOL_CALLS
+            ),
+            ToolCallLimitMiddleware(
+                tool_name=DATE_TOOL_NAME, run_limit=settings.MAX_TOOL_CALLS
             ),
             ToolRetryMiddleware(
                 max_retries=settings.TOOL_MAX_RETRIES,
-                on_failure=_tool_failure_message,
+                on_failure=_search_tool_failure_message,
             ),
         ],
     )
     return create_agent(
         model=llm,
-        tools=[make_search_documents_tool(retrieval_service, reranker_chain)],
+        tools=[
+            make_search_documents_tool(retrieval_service, reranker_chain),
+            get_today_date,
+        ],
         response_format=ToolStrategy(AssistantResponse),
         context_schema=AgentContext,
         middleware=middleware_list,
@@ -183,15 +192,6 @@ def make_agent_assistant_node(
             return _assistant_update(
                 AssistantResponse(answer=NOT_FOUND_ANSWER), agent_context.sources
             )
-        search_queries = [
-            call["args"].get("query")
-            for message in result["messages"]
-            for call in getattr(message, "tool_calls", None) or []
-            if call["name"] == "search_documents"
-        ]
-        logger.info(
-            f"Agent made {len(search_queries)} search call(s): {search_queries}"
-        )
         response = result.get("structured_response")
         if not isinstance(response, AssistantResponse):
             last_text = result["messages"][-1].text if result.get("messages") else ""

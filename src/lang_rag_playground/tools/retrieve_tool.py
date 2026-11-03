@@ -35,6 +35,7 @@ def make_search_documents_tool(
         Args:
             query: Kısa ve anahtar kelime odaklı arama sorgusu. Türkçe veya İngilizce olabilir.
         """
+        logger.info(f"search_documents called with query: '{query}'")
         if not query or not query.strip():
             logger.warning("search_documents called with an empty query.")
             return NOT_FOUND_ANSWER

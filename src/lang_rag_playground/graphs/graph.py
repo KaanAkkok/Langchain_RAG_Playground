@@ -17,7 +17,7 @@ from lang_rag_playground.nodes.assistant_node import (
     build_assistant_agent,
     build_assistant_chain,
     make_agent_assistant_node,
-    make_workflow_assistant_node,
+    make_assistant_node,
 )
 from lang_rag_playground.nodes.blocked_node import blocked_response_node
 from lang_rag_playground.nodes.guardrails_node import (
@@ -67,7 +67,7 @@ def workflow_graph(
     )
     builder.add_node(
         "assistant",
-        make_workflow_assistant_node(assistant_chain),
+        make_assistant_node(assistant_chain),
         retry_policy=retry_policy,
     )
     builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
