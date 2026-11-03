@@ -46,11 +46,16 @@ async def ingest_files(
             content = await asyncio.to_thread(extractor.extract, file_path)
             chunks = await chunker.chunk(content, file_path)
             if not chunks:
-                yield f"❌ {name}: Belgeden metin parçası (chunk) üretilemedi."
+                yield f"[INGESTION] {name}: Belgeden metin parçası (chunk) üretilemedi."
                 continue
             yield f"[INGESTION - CHUNKING] {name}: {len(chunks)} chunk oluşturuldu, Qdrant'a yazılıyor..."
             await retrieval_service.store_documents(chunks)
             yield f"[INGESTION - EMBEDDING] {name}: {len(chunks)} chunk --> Qdrant'a yazıldı"
-        except (DocumentExtractionError, DocumentChunkingError, Exception) as exc:
-            yield f"❌ {name}: {exc}"
+        except (
+            DocumentExtractionError,
+            DocumentChunkingError,
+            ValueError,
+            TypeError,
+        ) as exc:
+            yield f"[INGESTION] {name}: {exc}"
             continue

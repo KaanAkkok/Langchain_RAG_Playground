@@ -1,8 +1,8 @@
 import json
 
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.documents import Document
 
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.prompts.prompts import RERANK_PROMPT
@@ -26,19 +26,17 @@ def build_reranker_chain(
 
 
 async def rerank_documents(
-    chain: Runnable, 
-    query: str, 
-    candidates: list[Document], 
-    top_k: int, 
-    min_score: float
+    chain: Runnable,
+    query: str,
+    candidates: list[Document],
+    top_k: int,
+    min_score: float,
 ) -> list[Document]:
     if not candidates:
         raise ValueError("The candidates list is empty.")
     if not query or not query.strip():
         raise ValueError("The query is empty or only contains whitespace.")
-    passages = [
-        {"id": i, "text": doc.page_content} for i, doc in enumerate(candidates)
-    ]
+    passages = [{"id": i, "text": doc.page_content} for i, doc in enumerate(candidates)]
     payload = json.dumps({"query": query, "passages": passages}, ensure_ascii=False)
     response = await chain.ainvoke({"payload": payload})
     if not isinstance(response, RerankResponse):
@@ -61,7 +59,5 @@ async def rerank_documents(
             **doc.metadata,
             "reranker_score": item.score,
         }
-        reranked_documents.append(
-            doc.model_copy(update={"metadata": updated_metadata})
-        )
+        reranked_documents.append(doc.model_copy(update={"metadata": updated_metadata}))
     return reranked_documents[:top_k]

@@ -16,8 +16,8 @@ from langgraph.store.base import (
 )
 from qdrant_client import models
 
-from lang_rag_playground.retrieval.vectordb_service import AsyncQdrantVectorDBService
 from lang_rag_playground.core.settings import settings
+from lang_rag_playground.retrieval.vectordb_service import AsyncQdrantVectorDBService
 
 
 class QdrantMemoryStore(BaseStore):
@@ -99,9 +99,7 @@ class QdrantMemoryStore(BaseStore):
         await asyncio.to_thread(
             self.vector_db.client.upsert,
             collection_name=self.collection_name,
-            points=[
-                models.PointStruct(id=point_id, vector=vector, payload=payload)
-            ],
+            points=[models.PointStruct(id=point_id, vector=vector, payload=payload)],
         )
 
     async def _search(self, op: SearchOp) -> list[SearchItem]:

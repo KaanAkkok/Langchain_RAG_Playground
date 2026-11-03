@@ -29,7 +29,6 @@ def trim_history(state: AgentState, max_tokens: int) -> list[BaseMessage]:
     return trimmed_history
 
 
-
 def format_sources(documents: list[Document], start: int = 1) -> str:
     if not documents:
         return "(kaynak yok)"

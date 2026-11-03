@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field
 
+
 # add model_config extra ignore if u using workflow graph rather than agent graph
-# Because in agent graph assistant calls tools and gemini reject additionalProperties 
+# Because in agent graph assistant calls tools and gemini reject additionalProperties
 class AssistantResponse(BaseModel):
     answer: str = Field(
         ...,

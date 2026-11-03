@@ -1,18 +1,18 @@
 from uuid import uuid4
 
-from langgraph.runtime import Runtime
-from langchain_core.runnables import Runnable
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import Runnable
+from langgraph.runtime import Runtime
 
+from lang_rag_playground.core.exceptions import MemoryRecallError, MemoryStoreError
+from lang_rag_playground.core.logger import get_logger
+from lang_rag_playground.core.settings import settings
 from lang_rag_playground.models.agent_state_model import AgentState
 from lang_rag_playground.models.context_model import Context
-from lang_rag_playground.core.settings import settings
 from lang_rag_playground.nodes.utils import trim_history
 from lang_rag_playground.prompts.prompts import MEMORY_PROMPT
-from lang_rag_playground.services.llm import build_chat_model
 from lang_rag_playground.schemas.memory_schema import MemoryExtraction
-
-from lang_rag_playground.core.logger import get_logger
+from lang_rag_playground.services.llm import build_chat_model
 
 logger = get_logger(__name__)
 
@@ -48,7 +48,7 @@ def make_memory_recall_node(
                 query=state["resolved_query"],
                 limit=limit,
             )
-        except Exception as e:
+        except MemoryRecallError as e:
             logger.warning(f"Failed to search memories: {e}")
             return {"memories": []}
         if not items:
@@ -58,8 +58,11 @@ def make_memory_recall_node(
         for item in items:
             if item.score is not None and item.score >= min_score:
                 memories.append(item.value["content"])
-        logger.info(f"Recalled {len(memories)}/{len(items)} memories (min_score={min_score}).")
+        logger.info(
+            f"Recalled {len(memories)}/{len(items)} memories (min_score={min_score})."
+        )
         return {"memories": memories}
+
     return memory_recall_node
 
 
@@ -74,11 +77,7 @@ def make_memory_extract_node(
             logger.warning("No memory store configured; skipping memory extraction.")
             return {}
         history = trim_history(state, max_tokens=max_history_tokens)
-        try:
-            response = await chain.ainvoke({"history": history})
-        except Exception as e:
-            logger.warning(f"Failed to invoke memory extraction chain: {e}")
-            return {}
+        response = await chain.ainvoke({"history": history})
         if not isinstance(response, MemoryExtraction):
             logger.warning("The response is not of type MemoryExtraction class.")
             return {}
@@ -93,11 +92,11 @@ def make_memory_extract_node(
                     value=memory.model_dump(),
                 )
                 stored += 1
-            except Exception as e:
+            except MemoryStoreError as e:
                 logger.warning(f"Failed to store memory: {e}")
         logger.info(
             f"Stored {stored}/{len(response.memories)} extracted memories (threshold={threshold})."
         )
         return {}
+
     return memory_extract_node
-        

@@ -1,14 +1,17 @@
-from typing import Any, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, cast
 
+from langchain.agents import create_agent
+from langchain.agents.middleware import ToolCallLimitMiddleware, ToolRetryMiddleware
+from langchain.agents.structured_output import ToolStrategy
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable
-from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
-from langchain.agents.middleware import ToolCallLimitMiddleware, ToolRetryMiddleware
 from langgraph.errors import GraphRecursionError
 
+from lang_rag_playground.core.logger import get_logger
 from lang_rag_playground.core.settings import settings
+from lang_rag_playground.models.agent_context_model import AgentContext
 from lang_rag_playground.models.agent_state_model import AgentState
 from lang_rag_playground.nodes.utils import (
     format_feedback,
@@ -17,26 +20,38 @@ from lang_rag_playground.nodes.utils import (
     trim_history,
 )
 from lang_rag_playground.prompts.prompts import ASSISTANT_AGENT_PROMPT, ASSISTANT_PROMPT
+from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 from lang_rag_playground.schemas.assistant_schema import AssistantResponse
 from lang_rag_playground.services.llm import build_chat_model
-from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 from lang_rag_playground.tools.search_tools import make_search_documents_tool
-from lang_rag_playground.models.agent_context_model import AgentContext
-from lang_rag_playground.core.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-_CONTEXT_SECTIONS = "\n\n## Kullanıcı hakkında bilinenler\n{memories}\n\n## Görev\n{intent}"
+_CONTEXT_SECTIONS = (
+    "\n\n## Kullanıcı hakkında bilinenler\n{memories}\n\n## Görev\n{intent}"
+)
 WORKFLOW_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
     [
-        ("system", ASSISTANT_PROMPT + _CONTEXT_SECTIONS + "\n\n## Kaynaklar\n{sources}\n\n{feedback}"),
+        (
+            "system",
+            ASSISTANT_PROMPT
+            + _CONTEXT_SECTIONS
+            + "\n\n## Kaynaklar\n{sources}\n\n{feedback}",
+        ),
         MessagesPlaceholder("history"),
     ]
 )
 AGENT_ASSISTANT_TEMPLATE = ChatPromptTemplate.from_messages(
     [
-        ("system", ASSISTANT_PROMPT + "\n\n" + ASSISTANT_AGENT_PROMPT + _CONTEXT_SECTIONS + "\n\n## Önerilen arama sorgusu\n{resolved_query}\n\n{feedback}"),
+        (
+            "system",
+            ASSISTANT_PROMPT
+            + "\n\n"
+            + ASSISTANT_AGENT_PROMPT
+            + _CONTEXT_SECTIONS
+            + "\n\n## Önerilen arama sorgusu\n{resolved_query}\n\n{feedback}",
+        ),
         MessagesPlaceholder("history"),
     ]
 )
@@ -85,7 +100,9 @@ def make_workflow_assistant_node(
         history = trim_history(state, max_history_tokens) or [last_user_msg]
         sources = state.get("reranked_documents") or []
         if state.get("feedback"):
-            logger.info(f"Rewriting answer with judge feedback (attempt {state.get('retry_count', 0) + 1}).")
+            logger.info(
+                f"Rewriting answer with judge feedback (attempt {state.get('retry_count', 0) + 1})."
+            )
         response = await chain.ainvoke(
             {
                 "memories": _format_memories(state),
@@ -117,12 +134,14 @@ def build_assistant_agent(
     middleware_list = cast(
         Sequence[Any],
         [
-            ToolCallLimitMiddleware(tool_name="search_documents", run_limit=settings.MAX_TOOL_CALLS),
+            ToolCallLimitMiddleware(
+                tool_name="search_documents", run_limit=settings.MAX_TOOL_CALLS
+            ),
             ToolRetryMiddleware(
                 max_retries=settings.TOOL_MAX_RETRIES,
                 on_failure=_tool_failure_message,
             ),
-        ]
+        ],
     )
     return create_agent(
         model=llm,
@@ -148,7 +167,9 @@ def make_agent_assistant_node(
             history=history,
         )
         if state.get("feedback"):
-            logger.info(f"Rerunning agent with judge feedback (attempt {state.get('retry_count', 0) + 1}).")
+            logger.info(
+                f"Rerunning agent with judge feedback (attempt {state.get('retry_count', 0) + 1})."
+            )
         agent_context = AgentContext()
         try:
             result = await agent.ainvoke(
@@ -156,23 +177,33 @@ def make_agent_assistant_node(
                 context=agent_context,
             )
         except GraphRecursionError:
-            logger.warning("Agent hit the recursion limit; returning the not-found answer.")
-            return _assistant_update(AssistantResponse(answer=NOT_FOUND_ANSWER), agent_context.sources)
+            logger.warning(
+                "Agent hit the recursion limit; returning the not-found answer."
+            )
+            return _assistant_update(
+                AssistantResponse(answer=NOT_FOUND_ANSWER), agent_context.sources
+            )
         search_queries = [
             call["args"].get("query")
             for message in result["messages"]
             for call in getattr(message, "tool_calls", None) or []
             if call["name"] == "search_documents"
         ]
-        logger.info(f"Agent made {len(search_queries)} search call(s): {search_queries}")
+        logger.info(
+            f"Agent made {len(search_queries)} search call(s): {search_queries}"
+        )
         response = result.get("structured_response")
         if not isinstance(response, AssistantResponse):
             last_text = result["messages"][-1].text if result.get("messages") else ""
             if last_text.strip():
-                logger.warning("Agent answered in plain text without AssistantResponse; using it without citations.")
+                logger.warning(
+                    "Agent answered in plain text without AssistantResponse; using it without citations."
+                )
                 response = AssistantResponse(answer=last_text, cited_sources=[])
             else:
-                logger.warning("Agent returned no answer; returning the not-found answer.")
+                logger.warning(
+                    "Agent returned no answer; returning the not-found answer."
+                )
                 response = AssistantResponse(answer=NOT_FOUND_ANSWER, cited_sources=[])
         return _assistant_update(response, agent_context.sources)
 

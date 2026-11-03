@@ -5,9 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class MemoryResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    memory_type: Literal[
-        "fact", "event", "preference", "goal", "inference"
-    ] = Field(
+    memory_type: Literal["fact", "event", "preference", "goal", "inference"] = Field(
         ...,
         description="The type of memory, e.g., 'fact', 'event', 'preference', 'goal' or 'inference'",
     )

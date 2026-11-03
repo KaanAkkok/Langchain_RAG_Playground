@@ -17,7 +17,9 @@ async def test_ingest_files_happy_path(tmp_path: Path):
     extractor = MagicMock()
     extractor.extract.return_value = "Extracted markdown"
     chunker = MagicMock()
-    chunker.chunk = AsyncMock(return_value=[Document(page_content="c1"), Document(page_content="c2")])
+    chunker.chunk = AsyncMock(
+        return_value=[Document(page_content="c1"), Document(page_content="c2")]
+    )
     retrieval = MagicMock()
     retrieval.store_documents = AsyncMock(return_value=2)
 
@@ -41,7 +43,9 @@ async def test_ingest_files_rejects_non_pdf_and_continues(tmp_path: Path):
     retrieval = MagicMock()
     retrieval.store_documents = AsyncMock(return_value=1)
 
-    steps = [msg async for msg in ingest_files([bad, good], extractor, chunker, retrieval)]
+    steps = [
+        msg async for msg in ingest_files([bad, good], extractor, chunker, retrieval)
+    ]
     assert any("❌" in s and "notlar.txt" in s for s in steps)
     assert any("ok.pdf" in s and "Qdrant'a yazıldı" in s for s in steps)
 
@@ -60,13 +64,17 @@ async def test_ingest_files_handles_extraction_error_and_empty_chunks(tmp_path: 
     retrieval = MagicMock()
     retrieval.store_documents = AsyncMock()
 
-    steps = [msg async for msg in ingest_files([pdf1, pdf2], extractor, chunker, retrieval)]
+    steps = [
+        msg async for msg in ingest_files([pdf1, pdf2], extractor, chunker, retrieval)
+    ]
     assert any("❌" in s and "bozuk.pdf" in s for s in steps)
     assert any("❌" in s and "bos.pdf" in s for s in steps)
 
 
 @pytest.mark.asyncio
-async def test_ingest_files_handles_missing_and_oversized_files(tmp_path: Path, monkeypatch):
+async def test_ingest_files_handles_missing_and_oversized_files(
+    tmp_path: Path, monkeypatch
+):
     missing = tmp_path / "yok.pdf"
     huge = tmp_path / "dev.pdf"
     huge.write_bytes(b"%PDF-1.4 oversized")
@@ -76,6 +84,9 @@ async def test_ingest_files_handles_missing_and_oversized_files(tmp_path: Path, 
     chunker = MagicMock()
     retrieval = MagicMock()
 
-    steps = [msg async for msg in ingest_files([missing, huge], extractor, chunker, retrieval)]
+    steps = [
+        msg
+        async for msg in ingest_files([missing, huge], extractor, chunker, retrieval)
+    ]
     assert any("❌" in s and "yok.pdf" in s and "Dosya bulunamadı" in s for s in steps)
     assert any("❌" in s and "dev.pdf" in s and "50 MB" in s for s in steps)

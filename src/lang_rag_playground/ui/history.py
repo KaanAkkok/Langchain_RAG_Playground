@@ -30,7 +30,9 @@ def new_thread_id() -> str:
     return str(uuid.uuid4())
 
 
-async def list_threads(checkpointer: InMemorySaver, user_id: str) -> list[tuple[str, str]]:
+async def list_threads(
+    checkpointer: InMemorySaver, user_id: str
+) -> list[tuple[str, str]]:
     """Kullanıcının sohbet geçmişini en yeniden en eskiye doğru (başlık, thread_id) olarak listeler."""
     latest_by_thread: dict[str, tuple[str, dict[str, Any]]] = {}
 
@@ -70,12 +72,16 @@ async def list_threads(checkpointer: InMemorySaver, user_id: str) -> list[tuple[
 async def load_thread(graph: Any, thread_id: str) -> list[gr.ChatMessage]:
     """Belirtilen thread_id'ye ait mesajları yükleyip Gradio ChatMessage listesine dönüştürür."""
     state = await graph.aget_state({"configurable": {"thread_id": thread_id}})
-    messages = (getattr(state, "values", None) or {}).get("messages", []) if state else []
+    messages = (
+        (getattr(state, "values", None) or {}).get("messages", []) if state else []
+    )
 
     chat_messages: list[gr.ChatMessage] = []
     for msg in messages:
         if isinstance(msg, HumanMessage):
-            chat_messages.append(gr.ChatMessage(role="user", content=_extract_text(msg)))
+            chat_messages.append(
+                gr.ChatMessage(role="user", content=_extract_text(msg))
+            )
         elif isinstance(msg, AIMessage):
             text = _extract_text(msg)
             if text:

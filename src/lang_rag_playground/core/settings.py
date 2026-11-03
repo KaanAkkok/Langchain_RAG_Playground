@@ -97,4 +97,5 @@ class Settings(BaseSettings):
     GRADIO_HOST: str = "localhost"
     GRADIO_PORT: int = 7860
 
+
 settings = Settings()

@@ -12,3 +12,23 @@ class DocumentExtractionError(RAGError):
 
 class DocumentChunkingError(RAGError):
     """Document chunking failed."""
+
+
+class RerankerError(RAGError):
+    """Reranking failed."""
+
+
+class GraphStreamError(RAGError):
+    """Graph streaming failed."""
+
+
+class MemoryStoreError(RAGError):
+    """Memory store operation failed."""
+
+
+class MemoryRecallError(RAGError):
+    """Memory recall failed."""
+
+
+class LLMGenerationError(RAGError):
+    """LLM generation failed."""

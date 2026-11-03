@@ -19,7 +19,9 @@ async def test_list_threads_deduplicates_and_sorts_newest_first():
             "ts": "2026-11-02T10:05:00Z",
             "channel_values": {
                 "messages": [
-                    HumanMessage(content="İlk sohbetin oldukça uzun olan başlık metni kırk karakteri geçiyor"),
+                    HumanMessage(
+                        content="İlk sohbetin oldukça uzun olan başlık metni kırk karakteri geçiyor"
+                    ),
                     AIMessage(content="Yanıt 1"),
                 ]
             },
@@ -37,7 +39,11 @@ async def test_list_threads_deduplicates_and_sorts_newest_first():
         checkpoint={
             "ts": "2026-11-02T11:00:00Z",
             "channel_values": {
-                "messages": [HumanMessage(content=[{"type": "text", "text": "İkinci sohbet sorusu"}])]
+                "messages": [
+                    HumanMessage(
+                        content=[{"type": "text", "text": "İkinci sohbet sorusu"}]
+                    )
+                ]
             },
         },
     )

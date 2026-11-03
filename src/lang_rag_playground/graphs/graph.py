@@ -43,10 +43,7 @@ def workflow_graph(
     store: BaseStore | None = None,
     checkpointer: InMemorySaver | None = None,
 ):
-    if any(
-        service is None
-        for service in [retrieval_service, guardrails_service]
-    ):
+    if any(service is None for service in [retrieval_service, guardrails_service]):
         raise ValueError("Retrieval service and guardrails service must be provided.")
 
     intent_chain = build_intent_chain()
@@ -59,12 +56,24 @@ def workflow_graph(
 
     builder = StateGraph(AgentState, context_schema=Context)
     builder.add_node("input_guardrails", make_input_guardrails_node(guardrails_service))
-    builder.add_node("intent", make_intent_node(intent_chain), retry_policy=retry_policy)
-    builder.add_node("retrieval", make_retrieval_node(retrieval_service), retry_policy=retry_policy)
-    builder.add_node("reranker", make_reranker_node(reranker_chain), retry_policy=retry_policy)
-    builder.add_node("assistant", make_workflow_assistant_node(assistant_chain), retry_policy=retry_policy)
+    builder.add_node(
+        "intent", make_intent_node(intent_chain), retry_policy=retry_policy
+    )
+    builder.add_node(
+        "retrieval", make_retrieval_node(retrieval_service), retry_policy=retry_policy
+    )
+    builder.add_node(
+        "reranker", make_reranker_node(reranker_chain), retry_policy=retry_policy
+    )
+    builder.add_node(
+        "assistant",
+        make_workflow_assistant_node(assistant_chain),
+        retry_policy=retry_policy,
+    )
     builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
-    builder.add_node("output_guardrails", make_output_guardrails_node(guardrails_service))
+    builder.add_node(
+        "output_guardrails", make_output_guardrails_node(guardrails_service)
+    )
     builder.add_node("memory_recall", make_memory_recall_node())
     builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
     builder.add_node("blocked", blocked_response_node)
@@ -91,10 +100,7 @@ def agentic_graph(
     store: BaseStore | None = None,
     checkpointer: InMemorySaver | None = None,
 ):
-    if any(
-        service is None
-        for service in [retrieval_service, guardrails_service]
-    ):
+    if any(service is None for service in [retrieval_service, guardrails_service]):
         raise ValueError("Retrieval service and guardrails service must be provided.")
 
     intent_chain = build_intent_chain()
@@ -107,10 +113,18 @@ def agentic_graph(
 
     builder = StateGraph(AgentState, context_schema=Context)
     builder.add_node("input_guardrails", make_input_guardrails_node(guardrails_service))
-    builder.add_node("intent", make_intent_node(intent_chain), retry_policy=retry_policy)
-    builder.add_node("assistant", make_agent_assistant_node(assistant_agent), retry_policy=retry_policy)
+    builder.add_node(
+        "intent", make_intent_node(intent_chain), retry_policy=retry_policy
+    )
+    builder.add_node(
+        "assistant",
+        make_agent_assistant_node(assistant_agent),
+        retry_policy=retry_policy,
+    )
     builder.add_node("judge", make_judge_node(judge_chain), retry_policy=retry_policy)
-    builder.add_node("output_guardrails", make_output_guardrails_node(guardrails_service))
+    builder.add_node(
+        "output_guardrails", make_output_guardrails_node(guardrails_service)
+    )
     builder.add_node("memory_recall", make_memory_recall_node())
     builder.add_node("memory_extract", make_memory_extract_node(memory_chain))
     builder.add_node("blocked", blocked_response_node)
@@ -138,8 +152,15 @@ if __name__ == "__main__":
     from lang_rag_playground.services.llm import build_embedding_model
 
     embedding_model = build_embedding_model()
-    retrieval_service = RetrievalService(AsyncQdrantVectorDBService(embedding_model, host="localhost", port=6333), "dummy")
-    workflow = workflow_graph(retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver())
+    retrieval_service = RetrievalService(
+        AsyncQdrantVectorDBService(embedding_model, host="localhost", port=6333),
+        "dummy",
+    )
+    workflow = workflow_graph(
+        retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver()
+    )
     workflow.get_graph().draw_mermaid_png(output_file_path="graph_diagram_workflow.png")
-    agentic = agentic_graph(retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver())
+    agentic = agentic_graph(
+        retrieval_service, Guardrails(), InMemoryStore(), InMemorySaver()
+    )
     agentic.get_graph().draw_mermaid_png(output_file_path="graph_diagram_agentic.png")

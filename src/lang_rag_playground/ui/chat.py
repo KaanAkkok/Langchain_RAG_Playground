@@ -5,6 +5,7 @@ import gradio as gr
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage
 
+from lang_rag_playground.core.exceptions import GraphStreamError
 from lang_rag_playground.models.context_model import Context
 from lang_rag_playground.ui.graph_view import render
 from lang_rag_playground.ui.services import AppServices
@@ -20,8 +21,12 @@ def format_citations(documents: Sequence[Document]) -> str:
         if reranker_score > 0:
             score_label = f"reranker {reranker_score:.1f}"
         else:
-            score_label = f"hybrid {float(doc.metadata.get('score') or 0.0):.3f} (rerank yok)"
-        lines.append(f"[{i}] {doc_name}, page.{page}, paragraph.{para} — {score_label}\n\n{doc.page_content[:200]}...\n")
+            score_label = (
+                f"hybrid {float(doc.metadata.get('score') or 0.0):.3f} (rerank yok)"
+            )
+        lines.append(
+            f"[{i}] {doc_name}, page.{page}, paragraph.{para} — {score_label}\n\n{doc.page_content[:200]}...\n"
+        )
     return "\n".join(lines)
 
 
@@ -48,7 +53,11 @@ def _format_intent(update: dict[str, Any]) -> tuple[str, str]:
 def _format_memory_recall(update: dict[str, Any]) -> tuple[str, str]:
     memories = update.get("memories") or []
     title = f"[MEMORY] {len(memories)} hatıra bulundu"
-    content = "\n".join(f"- {m}" for m in memories) if memories else "İlgili hatıra bulunamadı."
+    content = (
+        "\n".join(f"- {m}" for m in memories)
+        if memories
+        else "İlgili hatıra bulunamadı."
+    )
     return title, content
 
 
@@ -69,8 +78,14 @@ def _format_reranker(update: dict[str, Any]) -> tuple[str, str]:
 def _format_assistant(update: dict[str, Any]) -> tuple[str, str]:
     retry_count = int(update.get("retry_count", 0) or 0)
     reranked = update.get("reranked_documents") or []
-    title = f"[ASSISTANT] Cevap yeniden yazıldı" if retry_count > 0 else "[ASSISTANT] Cevap yazıldı"
-    content = f"İncelenen kaynak sayısı: {len(reranked)}" if reranked else "Yanıt üretildi."
+    title = (
+        "[ASSISTANT] Cevap yeniden yazıldı"
+        if retry_count > 0
+        else "[ASSISTANT] Cevap yazıldı"
+    )
+    content = (
+        f"İncelenen kaynak sayısı: {len(reranked)}" if reranked else "Yanıt üretildi."
+    )
     return title, content
 
 
@@ -78,10 +93,14 @@ def _format_judge(update: dict[str, Any]) -> tuple[str, str]:
     passed = update.get("judge_passed", False)
     feedback = update.get("feedback") or ""
     if passed:
-        title = f"[JUDGE] Doğrulama: geçti"
+        title = "[JUDGE] Doğrulama: geçti"
         content = "Yanıt doğrulandı."
     else:
-        title = f"[JUDGE] Doğrulama: geçmedi ({feedback})" if feedback else "[JUDGE] Doğrulama: geçmedi"
+        title = (
+            f"[JUDGE] Doğrulama: geçmedi ({feedback})"
+            if feedback
+            else "[JUDGE] Doğrulama: geçmedi"
+        )
         content = feedback or "Yanıt doğrulamadan geçemedi."
     return title, content
 
@@ -114,7 +133,9 @@ def format_node_step(node_name: str, update: dict[str, Any]) -> gr.ChatMessage |
     )
 
 
-def _extract_final_answer(update: dict[str, Any], accumulated_state: dict[str, Any]) -> str:
+def _extract_final_answer(
+    update: dict[str, Any], accumulated_state: dict[str, Any]
+) -> str:
     messages = update.get("messages") or []
     for msg in reversed(messages):
         if isinstance(msg, AIMessage):
@@ -146,7 +167,10 @@ async def respond(
     try:
         async for event in services.graph.astream(
             {"messages": [HumanMessage(content=message)]},
-            config={"configurable": {"thread_id": thread_id}, "metadata": {"user_id": user_id}},
+            config={
+                "configurable": {"thread_id": thread_id},
+                "metadata": {"user_id": user_id},
+            },
             context=Context(user_id=user_id),
             stream_mode="updates",
         ):
@@ -159,7 +183,13 @@ async def respond(
                     accumulated_state.update(update)
 
                 step_input = {
-                    **({k: accumulated_state[k] for k in ("retry_count",) if k in accumulated_state}),
+                    **(
+                        {
+                            k: accumulated_state[k]
+                            for k in ("retry_count",)
+                            if k in accumulated_state
+                        }
+                    ),
                     **update_dict,
                 }
                 step_msg = format_node_step(node_name, step_input)
@@ -177,19 +207,25 @@ async def respond(
                         answer_text += "\n\n**Kaynaklar:**\n" + format_citations(
                             accumulated_state["cited_documents"]
                         )
-                    history.append(gr.ChatMessage(role="assistant", content=answer_text))
+                    history.append(
+                        gr.ChatMessage(role="assistant", content=answer_text)
+                    )
 
                 yield (
                     list(history),
-                    render(services.mermaid_diagram, active_node=node_name, visited=visited),
+                    render(
+                        services.mermaid_diagram, active_node=node_name, visited=visited
+                    ),
                 )
 
         yield (
             list(history),
             render(services.mermaid_diagram, active_node=None, visited=visited),
         )
-    except Exception as exc:
-        history.append(gr.ChatMessage(role="assistant", content=f"❌ Bir hata oluştu: {exc}"))
+    except GraphStreamError as exc:
+        history.append(
+            gr.ChatMessage(role="assistant", content=f"[ERROR] Bir hata oluştu: {exc}")
+        )
         yield (
             list(history),
             render(

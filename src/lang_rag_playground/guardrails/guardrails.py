@@ -193,8 +193,9 @@ class Guardrails:
         if self._is_prompt_injection(message):
             logger.warning("Prompt injection detected in user message.")
             return InputGuardrailResult(is_input_safe=False, message=None)
-        return InputGuardrailResult(is_input_safe=True, message=self._mask_message(message))
-
+        return InputGuardrailResult(
+            is_input_safe=True, message=self._mask_message(message)
+        )
 
     def output_guardrail(self, text: str) -> str:
         masked_text, _ = self._process_text(text)

@@ -1,6 +1,8 @@
 from lang_rag_playground.ui.graph_view import render
 
-SAMPLE_MERMAID = "graph TD;\n\t__start__ --> input_guardrails;\n\tinput_guardrails --> intent;\n"
+SAMPLE_MERMAID = (
+    "graph TD;\n\t__start__ --> input_guardrails;\n\tinput_guardrails --> intent;\n"
+)
 
 
 def test_render_base_diagram_includes_mermaid_block_and_legend():
@@ -34,4 +36,3 @@ def test_render_same_active_and_failed_emits_only_failed_and_deduplicates_visite
     assert "class assistant failed;" in out
     assert "class assistant active;" not in out
     assert "class input_guardrails,intent visited;" in out
-

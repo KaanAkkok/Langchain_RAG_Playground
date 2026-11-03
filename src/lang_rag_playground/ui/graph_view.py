@@ -1,11 +1,6 @@
 from collections.abc import Sequence
 
-LEGEND_MARKDOWN = (
-    "**Durum:** "
-    "🟨 Çalışıyor · "
-    "🟩 Tamamlandı · "
-    "🟥 Hata · "
-)
+LEGEND_MARKDOWN = "**Durum:** " "🟨 Çalışıyor · " "🟩 Tamamlandı · " "🟥 Hata · "
 
 _CLASS_DEFS = (
     "\tclassDef default fill:#f2f0ff,stroke:#7c6fd6,color:#111827;\n"
@@ -27,7 +22,11 @@ def render(
 
     visited_clean: list[str] = []
     for node in visited:
-        if node and node not in (active_node, failed_node) and node not in visited_clean:
+        if (
+            node
+            and node not in (active_node, failed_node)
+            and node not in visited_clean
+        ):
             visited_clean.append(node)
 
     if visited_clean:

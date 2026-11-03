@@ -4,12 +4,12 @@ from uuid import uuid4
 
 import gradio as gr
 
+from lang_rag_playground.core.settings import settings
 from lang_rag_playground.ui.chat import respond
 from lang_rag_playground.ui.graph_view import render
 from lang_rag_playground.ui.history import list_threads, load_thread, new_thread_id
 from lang_rag_playground.ui.ingestion import ingest_files
 from lang_rag_playground.ui.services import AppServices, build_app_services
-from lang_rag_playground.core.settings import settings
 
 APP_CSS = """
 #graph-diagram .nodeLabel,

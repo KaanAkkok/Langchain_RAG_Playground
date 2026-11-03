@@ -43,7 +43,11 @@ def make_intent_node(
         )
         if not isinstance(response, Intent):
             raise TypeError("The response is not of type Intent class.")
-        intent = response.intent if response.confidence >= min_confidence else "needs_clarification"
+        intent = (
+            response.intent
+            if response.confidence >= min_confidence
+            else "needs_clarification"
+        )
         if intent != response.intent:
             logger.warning(
                 f"Low intent confidence ({response.confidence:.2f} < {min_confidence}): "

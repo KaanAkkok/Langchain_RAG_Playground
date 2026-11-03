@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+
 from langchain_core.documents import Document
 
 

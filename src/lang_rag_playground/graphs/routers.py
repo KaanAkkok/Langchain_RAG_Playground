@@ -30,7 +30,9 @@ def route_after_judge(
     return "assistant"
 
 
-def route_after_output_guardrails(state: AgentState, batch_size: int = settings.LONG_TERM_MEMORY_BATCH_SIZE) -> Literal["memory_extract", "__end__"]:
+def route_after_output_guardrails(
+    state: AgentState, batch_size: int = settings.LONG_TERM_MEMORY_BATCH_SIZE
+) -> Literal["memory_extract", "__end__"]:
     if len(state["messages"]) % batch_size == 0:
         return "memory_extract"
     return "__end__"

@@ -1,13 +1,13 @@
-from langchain_core.documents import Document
+from langchain.tools import ToolRuntime, tool
 from langchain_core.runnables import Runnable
-from langchain.tools import tool, ToolRuntime 
 
-from lang_rag_playground.models.agent_context_model import AgentContext
+from lang_rag_playground.core.exceptions import RerankerError
 from lang_rag_playground.core.logger import get_logger
 from lang_rag_playground.core.settings import settings
+from lang_rag_playground.models.agent_context_model import AgentContext
+from lang_rag_playground.nodes.utils import format_sources
 from lang_rag_playground.retrieval.reranking import rerank_documents
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
-from lang_rag_playground.nodes.utils import format_sources
 
 logger = get_logger(__name__)
 
@@ -51,13 +51,15 @@ def make_search_documents_tool(
                 query=query,
                 candidates=candidate_docs,
                 top_k=top_k,
-                min_score=min_score
+                min_score=min_score,
             )
-        except Exception as e:
+        except RerankerError as e:
             logger.warning(f"Rerank failed, falling back to vector order: {e}")
             documents = candidate_docs[:top_k]
         if not documents:
-            logger.info(f"search_documents('{query}'): no candidate passed min_score={min_score}.")
+            logger.info(
+                f"search_documents('{query}'): no candidate passed min_score={min_score}."
+            )
             return not_found
         start = len(runtime.context.sources) + 1
         runtime.context.sources.extend(documents)
@@ -68,4 +70,5 @@ def make_search_documents_tool(
         )
         formatted_sources = format_sources(documents, start=start)
         return f"Bulunan kaynaklar:\n\n{formatted_sources}"
+
     return search_documents
