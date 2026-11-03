@@ -3,8 +3,9 @@ import re
 from langchain.agents.middleware import PIIMatch
 
 _TEXT_NAME_RE = re.compile(
-    r"(?i)\b(?:ad[iı]m|ismim|ad[iı]\s*soyad[iı]m|isim\s*soyisim|soyad[iı]m)\s*[:=]?\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü'-]+(?:\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü'-]+){0,3}",
-    re.IGNORECASE,
+    r"\b(?i:ad[iı]m|ismim|ad[iı]\s*soyad[iı]m|isim\s*soyisim|soyad[iı]m)"
+    r"\s*[:=]?\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü'-]+"
+    r"(?:\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü'-]+){0,3}",
 )
 NAME_MASK = "[NAME]"
 

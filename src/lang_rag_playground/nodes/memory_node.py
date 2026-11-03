@@ -42,7 +42,6 @@ def make_memory_recall_node(
         if memory_store is None:
             logger.warning("No memory store configured; skipping memory recall.")
             return {"memories": []}
-        # Memory is optional: if the search fails, answer without it.
         try:
             items = await memory_store.asearch(
                 (runtime.context.user_id, "memories"),
@@ -75,7 +74,6 @@ def make_memory_extract_node(
             logger.warning("No memory store configured; skipping memory extraction.")
             return {}
         history = trim_history(state, max_tokens=max_history_tokens)
-        # The answer is already produced; a memory failure must not fail the turn.
         try:
             response = await chain.ainvoke({"history": history})
         except Exception as e:
