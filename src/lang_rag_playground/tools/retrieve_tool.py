@@ -9,6 +9,8 @@ from lang_rag_playground.nodes.utils import format_sources
 from lang_rag_playground.retrieval.reranking import rerank_documents
 from lang_rag_playground.retrieval.retrieval_service import RetrievalService
 
+NOT_FOUND_ANSWER = "Bu sorguyla ilgili belge bulunamadı. Farklı kelimelerle tekrar aramayı dene; arama hakkın bittiyse kullanıcıya bilginin yüklenen dokümanlarda bulunamadığını söyle."
+
 logger = get_logger(__name__)
 
 
@@ -19,11 +21,6 @@ def make_search_documents_tool(
     top_k: int = settings.TOP_K_CANDIDATES,
     min_score: float = settings.MIN_RERANK_SCORE,
 ):
-    not_found = (
-        "Bu sorguyla ilgili belge bulunamadı. Farklı kelimelerle tekrar aramayı dene; "
-        "arama hakkın bittiyse kullanıcıya bilginin yüklenen dokümanlarda bulunamadığını söyle."
-    )
-
     @tool
     async def search_documents(
         query: str,
@@ -40,11 +37,11 @@ def make_search_documents_tool(
         """
         if not query or not query.strip():
             logger.warning("search_documents called with an empty query.")
-            return not_found
+            return NOT_FOUND_ANSWER
         candidate_docs = await retrieval_service.search(query=query, top_k=candidates)
         if not candidate_docs:
             logger.info(f"search_documents('{query}'): no candidates.")
-            return not_found
+            return NOT_FOUND_ANSWER
         try:
             documents = await rerank_documents(
                 chain=reranker_chain,
@@ -60,7 +57,7 @@ def make_search_documents_tool(
             logger.info(
                 f"search_documents('{query}'): no candidate passed min_score={min_score}."
             )
-            return not_found
+            return NOT_FOUND_ANSWER
         start = len(runtime.context.sources) + 1
         runtime.context.sources.extend(documents)
         scores = [doc.metadata.get("reranker_score") for doc in documents]
