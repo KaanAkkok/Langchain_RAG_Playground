@@ -1,5 +1,3 @@
-
-
 from lang_rag_playground.core.settings import settings
 from lang_rag_playground.ui.APP_CSS import APP_CSS
 from lang_rag_playground.ui.app import create_app
