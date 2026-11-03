@@ -1,6 +1,7 @@
+import re
+import unicodedata
 from collections.abc import AsyncIterator
 from typing import Any
-from uuid import uuid4
 
 import gradio as gr
 
@@ -12,6 +13,15 @@ from lang_rag_playground.ui.ingestion import ingest_files
 from lang_rag_playground.ui.services import AppServices, build_app_services
 
 APP_CSS = """
+#welcome-screen {
+    max-width: 520px;
+    margin: auto;
+    justify-content: center;
+    min-height: 80vh;
+}
+#welcome-title {
+    text-align: center;
+}
 #graph-diagram .nodeLabel,
 #graph-diagram .nodeLabel * {
     color: #111827 !important;
@@ -130,39 +140,69 @@ async def handle_submit(
         )
 
 
-def create_app(services: AppServices | None = None) -> gr.Blocks:
+def create_app(services: AppServices | None = None, user_id: str = "default_user") -> gr.Blocks:
     if services is None:
         services = build_app_services()
 
     with gr.Blocks(title="Agentic RAG Playground", fill_height=True) as demo:
-        user_id_state = gr.State(lambda: "user_" + str(uuid4()))
+        user_id_state = gr.State(user_id)
         thread_id_state = gr.State(new_thread_id)
 
-        with gr.Sidebar():
-            new_chat_btn = gr.Button("+ Yeni Sohbet", variant="primary")
-            thread_radio = gr.Radio(
-                label="Geçmiş Sohbetler",
-                choices=[],
-                interactive=True,
+        with gr.Column(visible=True, elem_id="welcome-screen") as welcome_screen:
+            gr.Markdown(
+                "# Agentic RAG Playground\n\n"
+                "Başlamak için isminizi yazın.",
+                elem_id="welcome-title",
             )
+            name_input = gr.Textbox(
+                label="İsminiz",
+                placeholder="Memory kaydı için gerekiyor.",
+                max_lines=1,
+                autofocus=True,
+            )
+            user_id_state = gr.State(name_input.value)
+            start_button = gr.Button("Başla", variant="primary")
 
-        with gr.Row(scale=1, equal_height=True):
-            with gr.Column(scale=1):
-                diagram_md = gr.Markdown(
-                    value=render(services.mermaid_diagram),
-                    elem_id="graph-diagram",
-                    max_height="85vh",
+        with gr.Column(visible=False) as workspace:
+            with gr.Sidebar():
+                new_chat_btn = gr.Button("+ Yeni Sohbet", variant="primary")
+                thread_radio = gr.Radio(
+                    label="Geçmiş Sohbetler",
+                    choices=[],
+                    interactive=True,
                 )
-            with gr.Column(scale=2):
-                chatbot = gr.Chatbot(label="Sohbet", scale=1)
-                chat_input = gr.MultimodalTextbox(
-                    file_types=[".pdf"],
-                    file_count="multiple",
-                    placeholder="Mesajınızı yazın veya PDF yükleyin...",
-                    show_label=False,
-                    scale=0,
-                    max_lines=5,
-                )
+
+            with gr.Row(scale=1, equal_height=True):
+                with gr.Column(scale=1):
+                    diagram_md = gr.Markdown(
+                        value=render(services.mermaid_diagram),
+                        elem_id="graph-diagram",
+                        max_height="85vh",
+                    )
+                with gr.Column(scale=2):
+                    chatbot = gr.Chatbot(label="Sohbet", scale=1)
+                    chat_input = gr.MultimodalTextbox(
+                        file_types=[".pdf"],
+                        file_count="multiple",
+                        placeholder="Mesajınızı yazın veya PDF yükleyin...",
+                        show_label=False,
+                        scale=0,
+                        max_lines=5,
+                    )
+
+        def start_session(name: str) -> tuple[dict[str, Any], dict[str, Any], str]:
+            normalized_name = unicodedata.normalize("NFKC", name).strip()
+            if not normalized_name:
+                raise gr.Error("Lütfen isminizi yazın.")
+            user_key = re.sub(r"[^\w-]+", "_", normalized_name, flags=re.UNICODE)
+            user_key = user_key.strip("_-")
+            if not user_key:
+                raise gr.Error("Geçerli bir isim yazın.")
+            return (
+                gr.update(visible=False),
+                gr.update(visible=True),
+                f"user_{user_key.casefold()}",
+            )
 
         async def _on_submit(
             user_input: dict[str, Any] | None,
@@ -211,6 +251,12 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
             fn=_on_select_thread,
             inputs=[thread_radio],
             outputs=[thread_id_state, chatbot, diagram_md],
+        )
+
+        start_button.click(
+            fn=start_session,
+            inputs=[name_input],
+            outputs=[welcome_screen, workspace, user_id_state],
         )
 
     return demo
