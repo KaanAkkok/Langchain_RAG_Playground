@@ -8,14 +8,14 @@ PDF dokümanlar üzerinde soru cevaplayan, kaynak gösteren bir **Agentic RAG** 
 |---|---|
 | [Docker](https://docs.docker.com/get-docker/) (Docker Compose dahil) | Uygulama ve Qdrant konteynerde çalışır |
 | [uv](https://docs.astral.sh/uv/getting-started/installation/) | Testleri yerelde çalıştırmak için; Python 3.12'yi gerekirse kendisi indirir |
-| Gemini API anahtarı | [Google AI Studio](https://aistudio.google.com/apikey) üzerinden ücretsiz alınabilir |
+| Gemini API anahtarı | [Google AI Studio](https://aistudio.google.com/apikey)|
 
 ## Kurulum
 
 ```bash
 # 1. Repoyu klonla
 git clone <repo-adresi>
-cd lang_rag_playground
+cd langchain_rag_playground
 
 # 2. Ortam değişkenlerini hazırla
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
