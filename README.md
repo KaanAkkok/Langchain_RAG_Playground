@@ -6,11 +6,9 @@ PDF dokümanlar üzerinde soru cevaplayan, kaynak gösteren bir **Agentic RAG** 
 
 | Araç | Not |
 |---|---|
-| Python 3.12+ | `uv` gerekirse kendisi indirir |
-| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Paket ve sanal ortam yöneticisi |
-| [Docker](https://docs.docker.com/get-docker/) | Qdrant için |
+| [Docker](https://docs.docker.com/get-docker/) (Docker Compose dahil) | Uygulama ve Qdrant konteynerde çalışır |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Testleri yerelde çalıştırmak için; Python 3.12'yi gerekirse kendisi indirir |
 | Gemini API anahtarı | [Google AI Studio](https://aistudio.google.com/apikey) üzerinden ücretsiz alınabilir |
-| Tesseract OCR (opsiyonel) | Sadece taranmış (görüntü) PDF'ler için, `tur` ve `eng` dil paketleriyle |
 
 ## Kurulum
 
@@ -19,27 +17,24 @@ PDF dokümanlar üzerinde soru cevaplayan, kaynak gösteren bir **Agentic RAG** 
 git clone <repo-adresi>
 cd lang_rag_playground
 
-# 2. Bağımlılıkları kur (pytest dahil geliştirme araçları da kurulur)
-uv sync
-
-# 3. Ortam değişkenlerini hazırla
+# 2. Ortam değişkenlerini hazırla
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
+
+# 3. Testler için yerel bağımlılıkları kur (pytest dahil)
+uv sync
 ```
 
-`.env` dosyasını açıp en az `GEMINI_API_KEY` değerini gir. Diğer değerler varsayılan haliyle çalışır.
-
-```bash
-# 4. Qdrant'ı başlat
-docker compose up -d qdrant
-```
-
-Qdrant panosu: http://localhost:6333/dashboard
+`.env` dosyasını açıp en az `GEMINI_API_KEY` değerini gir. Diğer değerler varsayılan haliyle çalışır; Qdrant adresi konteyner içinde otomatik ayarlanır.
 
 ## Çalıştırma
 
 ```bash
-docker compose up -d --build
+docker compose up --build
 ```
+
+Bu komut uygulama imajını derler, Qdrant ve uygulamayı başlatır; loglar terminalde akar. Durdurmak için `Ctrl+C`. Kodda değişiklik yaptıktan sonra aynı komutu tekrar çalıştır; `--build` imajı yeni kodla yeniden derler. İlk derleme bağımlılıkları indirdiği için birkaç dakika sürer.
+
+Arka planda çalıştırmak istersen `docker compose up -d --build`, logları izlemek için `docker compose logs -f app`.
 
 Tarayıcıda http://localhost:7860 adresini aç. PDF yükle ve soru sor. Arayüzden graph türünü seçebilirsin:
 - **workflow**: Akış sabittir; her bilgi sorusunda arama yapılır.
@@ -47,10 +42,19 @@ Tarayıcıda http://localhost:7860 adresini aç. PDF yükle ve soru sor. Arayüz
 
 İlk çalıştırmada knowledge base boş olacağından dolayı önce PDF yükleyin ve ardından sorular sorun. PDF yükleme ve chunklama işlemi biraz zaman alabilir.
 
+Qdrant panosu: http://localhost:6333/dashboard
+
+## Testler
+
+```bash
+uv run pytest tests/exercises -q
+```
+
+Testler API anahtarı ve Qdrant gerektirmez. Lab görevleri ve tek görev çalıştırma için `docs/STUDENT_GUIDE.pdf` dosyasına bak.
 
 ## Değerlendirme (evaluation)
 
-`data/evaluation/` altındaki doküman ve ground truth seti ile retrieval metriklerini hesaplar (Qdrant çalışıyor olmalı):
+`data/evaluation/` altındaki doküman ve ground truth seti ile retrieval metriklerini hesaplar. Yerelde çalışır ama Qdrant'a ihtiyaç duyar; önce `docker compose up -d qdrant` ile Qdrant'ı başlat:
 
 ```bash
 uv run python -m lang_rag_playground.evaluation.eval
