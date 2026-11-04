@@ -13,7 +13,7 @@ _PROMPT_INJECTION_RE = re.compile(
         игнорировать|забудь|обойти|
         تجاهل|انسَ|تجاوز|
         忽略|忘记|无视|
-        unut|yoksay|atla|geçersizleştir
+        unut|yok\s*say|geçersizleştir
     )\b.{0,80}\b(?:
         previous|prior|above|earlier|system|developer|
         instructions?|rules?|prompts?|directives?|
@@ -25,7 +25,7 @@ _PROMPT_INJECTION_RE = re.compile(
         предыдущие|инструкции|правила|
         السابقة|التعليمات|القواعد|
         之前的|指令|规则|
-        önceki|talimatlar?|kurallar?|yönergeler?
+        önceki|talimat\w*|kural\w*|yönerge\w*
     )\b
 
     # 2. Gizli prompt veya talimatları ifşa etme
@@ -99,9 +99,8 @@ _PROMPT_INJECTION_RE = re.compile(
         güvenlik|korumalar?|kısıtlamalar?|filtreler?
     )\b
     
-    # 6. Gizli veya hassas bilgileri ifşa etme
+    # 6. Gizli veya hassas bilgileri ifşa etme (Türkçesi 7. bölümde)
     | \b(?:
-        gizli|gizlilik|özel|hassas|mahrem|gizlenmiş|
         confidential|secret|hidden|private|sensitive|classified|
         secreto|confidencial|oculto|privado|sensible|
         secret|confidentiel|caché|privé|sensible|
@@ -112,8 +111,6 @@ _PROMPT_INJECTION_RE = re.compile(
         سري|سرية|مخفي|
         机密|秘密|隐藏|隐私
     )\b.{0,60}\b(?:
-        ver|veri|bilgi(?:leri)?|açıkla|ifşa\s+et|göster|
-        paylaş|söyle|dök|çıkar|ilet|
         reveal|disclose|expose|show|provide|share|tell|print|dump|
         revelar|mostrar|exponer|proporcionar|compartir|
         révéler|divulguer|afficher|fournir|partager|
@@ -147,6 +144,47 @@ _PROMPT_INJECTION_RE = re.compile(
         المعلومات\s+السرية|البيانات\s+الحساسة|
         机密信息|秘密数据|敏感信息
     )\b
+    # 7a. Talimatları yok sayma: "Önceki talimatları yok say"
+    | \b(?:talimat|kural|yönerge|komut|direktif|prompt)\w*
+      [^.!?\n]{0,40}?
+      \b(?:
+          (?:unut|yok\s*say|görmezden\s+gel|geçersiz\s+(?:say|kıl)|es\s+geç|çiğne)
+          (?:yın|yin|ın|in|un|ün)?\b
+        | (?:dikkate\s+alma|önemseme|umursama)(?:yın|yin)?
+          (?=\s*(?:[.,;:!?]|\bve\b|$))
+      )
+    # 7b. Sistem prompt'unu sızdırma: "Sistem promptunu göster".
+    #     Nesne "-nı/-ni/-nu/-nü" ile bitmeli; "sistem promptu nedir" geçer.
+    | \b(?:sistem|gizli|iç)\s+
+      (?:prompt|talimat|yönerge|komut|mesaj)\w*n[ıiuü]\b
+      [^.!?,\n]{0,25}?
+      \b(?:göster|açıkla|yazdır|tekrarla|ifşa\s+et|paylaş|söyle|dök|listele|yaz)
+      (?:yın|yin|ın|in|un|ün|sene|sana)?\b
+    | \b(?:ilk|orijinal|asıl|başlangıç)\s+
+      (?:prompt|talimat|yönerge|komut|mesaj)\w*n[ıiuü]\b
+      [^.!?,\n]{0,25}?
+      \b(?:tekrarla|yazdır|ifşa\s+et|dök)(?:yın|yin|ın|in|sene|sana)?\b
+    # 7c. Gizli bilgiyi isteme: "Bana gizli bilgileri göster"
+    | \b(?:gizli|hassas|mahrem|gizlenmiş)\s+
+      (?:bilgi|veri|talimat|prompt|anahtar|şifre|parola|kayıt|belge|ayar)\w*
+      [^.!?,\n]{0,25}?
+      \b(?:göster|açıkla|ifşa\s+et|paylaş|söyle|ver|dök|çıkar|ilet|listele|yazdır|tekrarla)
+      (?:yın|yin|ın|in|un|ün|sene|sana)?\b
+    # 7d. Geliştirici/sınırsız mod: "Geliştirici moduna geç"
+    | \b(?:geliştirici|yönetici|admin|sınırsız|kısıtlamasız|filtresiz|sansürsüz|
+           jailbreak|developer|tanrı|god)\s+
+      (?:
+          mod(?:u|a|una|unu)?\s+
+          (?:geç|gir|aç|etkinleştir|aktifleştir|başlat)(?:in|ın)?\b
+        | mod(?:unda|da)s[ıi]n\b
+      )
+    # 7e. Güvenliği kapatma: "Güvenlik filtrelerini kapat"
+    | \b(?:güvenlik|filtre|koruma|kısıtlama|sansür|guardrail)\w*
+      [^.!?,\n]{0,30}?
+      \b(?:kapat|kaldır|devre\s+dışı\s+bırak|aş|atla|yok\s*say|görmezden\s+gel)
+      (?:ın|in|un|ün)?\b
+    # 7f. Rol değiştirme: "Bir korsan rolü yap"
+    | \brol(?:ü|ünü|üne)\s+(?:yap|oyna|üstlen|gir|al)(?:ın|in|sana)?\b
     """,
     re.IGNORECASE | re.VERBOSE,
 )
