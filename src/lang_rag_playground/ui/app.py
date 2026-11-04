@@ -184,7 +184,7 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
                             else "<p>Grafik türünü seçip Başla'ya basın.</p>"
                         ),
                         elem_id="graph-diagram",
-                        max_height=850,
+                        max_height=750,
                     )
                 with gr.Column(scale=2):
                     chatbot = gr.Chatbot(label="Sohbet", scale=1)
