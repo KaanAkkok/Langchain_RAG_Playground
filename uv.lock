@@ -1439,7 +1439,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
-    { name = "black" },
     { name = "docling-slim", extra = ["format-pdf-docling", "models-local"] },
     { name = "fastembed" },
     { name = "gradio" },
@@ -1453,7 +1452,6 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "qdrant-client" },
     { name = "rtree" },
-    { name = "ruff" },
     { name = "torch", version = "2.14.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.14.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "torchvision", version = "0.29.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
@@ -1462,13 +1460,14 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "black" },
     { name = "pytest" },
+    { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
-    { name = "black", specifier = ">=26.10.1" },
     { name = "docling-slim", extras = ["format-pdf-docling", "models-local"], specifier = ">=2.142.1" },
     { name = "fastembed", specifier = ">=0.9.1" },
     { name = "gradio", specifier = ">=6.31.0" },
@@ -1482,7 +1481,6 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.16.1" },
     { name = "qdrant-client", specifier = ">=1.20.0" },
     { name = "rtree", specifier = ">=1.4.1" },
-    { name = "ruff", specifier = ">=0.17.3" },
     { name = "torch", specifier = ">=2.2.2", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torchvision", specifier = ">=0.29.1", index = "https://download.pytorch.org/whl/cpu" },
 ]
