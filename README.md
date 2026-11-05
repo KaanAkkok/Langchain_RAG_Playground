@@ -6,8 +6,8 @@ PDF dokümanlar üzerinde soru cevaplayan, kaynak gösteren bir **Agentic RAG** 
 
 | Araç | Not |
 |---|---|
-| [Docker](https://docs.docker.com/get-docker/) (Docker Compose dahil) | Uygulama ve Qdrant konteynerde çalışır |
-| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Testleri yerelde çalıştırmak için; Python 3.12'yi gerekirse kendisi indirir |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Bağımlılıkları kurmak ve uygulamayı çalıştırmak için; Python 3.12'yi gerekirse kendisi indirir |
+| Docker (isteğe bağlı) | Qdrant'ı ayrı bir konteynerde çalıştırmak için |
 | Gemini API anahtarı | [Google AI Studio](https://aistudio.google.com/apikey)|
 
 ## Kurulum
@@ -26,7 +26,19 @@ uv sync
 
 `.env` dosyasını açıp en az `GEMINI_API_KEY` değerini gir. Diğer değerler varsayılan haliyle çalışır; Qdrant adresi konteyner içinde otomatik ayarlanır.
 
+Yerel Qdrant klasör modunda veriler `data/qdrant/` altında tutulur; Qdrant sunucusu veya Docker gerekmez.
+
 ## Çalıştırma
+
+### uv + yerel Qdrant (Docker gerekmez)
+
+```bash
+uv run lang-rag-playground
+```
+
+Tarayıcıda http://localhost:7860 adresini açın. `QDRANT_PATH` değerini değiştirerek veri klasörünü farklı bir konuma taşıyabilirsiniz. Uygulama kapatılıp açıldığında koleksiyonlar bu klasörden yeniden kullanılır.
+
+### Docker Compose (alternatif)
 
 ```bash
 docker compose up --build
@@ -42,7 +54,7 @@ Tarayıcıda http://localhost:7860 adresini aç. PDF yükle ve soru sor. Arayüz
 
 İlk çalıştırmada knowledge base boş olacağından dolayı önce PDF yükleyin ve ardından sorular sorun. PDF yükleme ve chunklama işlemi biraz zaman alabilir.
 
-Qdrant panosu: http://localhost:6333/dashboard
+Docker modu kullanılıyorsa Qdrant panosu: http://localhost:6333/dashboard
 
 ## Testler
 
@@ -54,7 +66,7 @@ Testler API anahtarı ve Qdrant gerektirmez. Lab görevleri ve tek görev çalı
 
 ## Değerlendirme (evaluation)
 
-`data/evaluation/` altındaki doküman ve ground truth seti ile retrieval metriklerini hesaplar. Yerelde çalışır ama Qdrant'a ihtiyaç duyar; önce `docker compose up -d qdrant` ile Qdrant'ı başlat:
+`data/evaluation/` altındaki doküman ve ground truth seti ile retrieval metriklerini hesaplar. Yerel Qdrant klasör modunda Docker olmadan çalışır:
 
 ```bash
 uv run python -m lang_rag_playground.evaluation.eval

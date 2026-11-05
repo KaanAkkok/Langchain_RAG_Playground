@@ -63,14 +63,20 @@ def build_app_services(graph_type: Literal["agentic", "workflow"]) -> AppService
         host=settings.QDRANT_HOST,
         port=settings.QDRANT_PORT,
         api_key=api_key,
+        path=settings.QDRANT_PATH or None,
     )
 
     try:
         vectordb.client.get_collections()
     except Exception as e:
+        target = (
+            f"klasör: {settings.QDRANT_PATH}"
+            if settings.QDRANT_PATH
+            else f"http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}"
+        )
         raise RuntimeError(
-            f"Qdrant çalışmıyor (http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}). "
-            "Başlatmak için: docker run -p 6333:6333 qdrant/qdrant"
+            f"Qdrant erişilemiyor ({target}). "
+            "Yerel klasör modu için QDRANT_PATH değerini kontrol edin."
         ) from e
 
     store = QdrantMemoryStore(vector_db=vectordb)
