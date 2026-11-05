@@ -45,6 +45,9 @@ class AsyncQdrantVectorDBService:
             )
         self.sparse_embedding = FastEmbedSparse(model_name="Qdrant/bm25")
 
+    def close(self) -> None:
+        self.client.close()
+
     def get_vector_store(self, collection_name: str) -> QdrantVectorStore:
         """Koleksiyon icin hibrit (dense + sparse) bir QdrantVectorStore dondurur.
 

@@ -227,6 +227,9 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
             user_key = user_key.strip("_-")
             if not user_key:
                 raise gr.Error("Geçerli bir isim yazın.")
+            previous_services = services_holder[0]
+            if previous_services is not None:
+                previous_services.vectordb.close()
             services_holder[0] = build_app_services(
                 cast(Literal["agentic", "workflow"], selected_graph_type)
             )
@@ -316,4 +319,3 @@ def create_app(services: AppServices | None = None) -> gr.Blocks:
         )
 
     return demo
-
