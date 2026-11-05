@@ -26,17 +26,23 @@ class AsyncQdrantVectorDBService:
         prefer_grpc: bool = False,
         url: str | None = None,
         api_key: str | None = None,
+        path: str | Path | None = settings.QDRANT_PATH,
     ):
         if embedding is None:
             raise ValueError("Embedding model is required")
         self.embedding = embedding
+        self.path = Path(path).resolve() if path else None
         self.url = url or f"http://{host}:{port}"
         self.api_key = api_key
-        self.client = QdrantClient(
-            url=self.url,
-            api_key=api_key,
-            prefer_grpc=prefer_grpc,
-        )
+        if self.path:
+            self.path.mkdir(parents=True, exist_ok=True)
+            self.client = QdrantClient(path=str(self.path))
+        else:
+            self.client = QdrantClient(
+                url=self.url,
+                api_key=api_key,
+                prefer_grpc=prefer_grpc,
+            )
         self.sparse_embedding = FastEmbedSparse(model_name="Qdrant/bm25")
 
     def get_vector_store(self, collection_name: str) -> QdrantVectorStore:
@@ -193,6 +199,20 @@ class AsyncQdrantVectorDBService:
             location = Path(location)
         if not location.is_file():
             raise FileNotFoundError(f"Snapshot file does not exist: {location}")
+        if self.path:
+            try:
+                result = await asyncio.to_thread(
+                    self.client.recover_snapshot,
+                    collection_name=collection_name,
+                    location=str(location),
+                    wait=True,
+                )
+                return bool(result)
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to restore snapshot '{location.name}' for collection "
+                    f"'{collection_name}': {e}"
+                ) from e
         headers = {"api-key": self.api_key} if self.api_key else {}
         try:
             async with httpx.AsyncClient(timeout=300) as http_client:

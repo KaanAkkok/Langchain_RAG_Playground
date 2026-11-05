@@ -175,7 +175,12 @@ if __name__ == "__main__":
 
     embedding_model = build_embedding_model()
     retrieval_service = RetrievalService(
-        AsyncQdrantVectorDBService(embedding_model, host="localhost", port=6333),
+        AsyncQdrantVectorDBService(
+            embedding_model,
+            host="localhost",
+            port=6333,
+            path=settings.QDRANT_PATH,
+        ),
         "dummy",
     )
     workflow = workflow_graph(
