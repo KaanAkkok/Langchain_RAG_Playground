@@ -28,12 +28,26 @@ uv sync
 
 Yerel Qdrant klasör modunda veriler `data/qdrant/` altında tutulur; Qdrant sunucusu veya Docker gerekmez.
 
+pip ile kurulum için:
+
+```bash
+python -m venv .venv
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# macOS/Linux:
+# source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
 ## Çalıştırma
 
-### uv + yerel Qdrant (Docker gerekmez)
+### uv veya pip + yerel Qdrant (Docker gerekmez)
 
 ```bash
 uv run lang-rag-playground
+# pip ile kurulum yaptıysanız:
+lang-rag-playground
 ```
 
 Tarayıcıda http://localhost:7860 adresini açın. `QDRANT_PATH` değerini değiştirerek veri klasörünü farklı bir konuma taşıyabilirsiniz. Uygulama kapatılıp açıldığında koleksiyonlar bu klasörden yeniden kullanılır.
@@ -60,6 +74,8 @@ Docker modu kullanılıyorsa Qdrant panosu: http://localhost:6333/dashboard
 
 ```bash
 uv run pytest tests/exercises -q
+# veya pip ile kurulum yaptıysanız:
+python -m pytest tests/exercises -q
 ```
 
 Testler API anahtarı ve Qdrant gerektirmez. Lab görevleri ve tek görev çalıştırma için `docs/STUDENT_GUIDE.pdf` dosyasına bak.
@@ -70,6 +86,8 @@ Testler API anahtarı ve Qdrant gerektirmez. Lab görevleri ve tek görev çalı
 
 ```bash
 uv run python -m lang_rag_playground.evaluation.eval
+# veya pip ile kurulum yaptıysanız:
+python -m lang_rag_playground.evaluation.eval
 ```
 
 ## Proje yapısı
