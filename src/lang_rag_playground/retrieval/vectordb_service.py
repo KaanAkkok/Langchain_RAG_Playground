@@ -26,18 +26,27 @@ class AsyncQdrantVectorDBService:
         prefer_grpc: bool = False,
         url: str | None = None,
         api_key: str | None = None,
+        path: str | Path | None = settings.QDRANT_PATH,
     ):
         if embedding is None:
             raise ValueError("Embedding model is required")
         self.embedding = embedding
+        self.path = Path(path).resolve() if path else None
         self.url = url or f"http://{host}:{port}"
         self.api_key = api_key
-        self.client = QdrantClient(
-            url=self.url,
-            api_key=api_key,
-            prefer_grpc=prefer_grpc,
-        )
+        if self.path:
+            self.path.mkdir(parents=True, exist_ok=True)
+            self.client = QdrantClient(path=str(self.path))
+        else:
+            self.client = QdrantClient(
+                url=self.url,
+                api_key=api_key,
+                prefer_grpc=prefer_grpc,
+            )
         self.sparse_embedding = FastEmbedSparse(model_name="Qdrant/bm25")
+
+    def close(self) -> None:
+        self.client.close()
 
     def get_vector_store(self, collection_name: str) -> QdrantVectorStore:
         return QdrantVectorStore(

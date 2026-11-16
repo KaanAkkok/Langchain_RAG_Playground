@@ -116,6 +116,7 @@ class Settings(BaseSettings):
     SAVED_DOCUMENTS_DIR: str = str(PROJECT_ROOT / "data" / "documents" / "saved_documents")
 
     QDRANT_API_KEY: SecretStr = SecretStr(os.getenv("QDRANT_API_KEY", ""))
+    QDRANT_PATH: str = str(PROJECT_ROOT / "data" / "qdrant")
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
     QDRANT_GRPC_PORT: int = 6334

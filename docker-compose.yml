@@ -21,6 +21,7 @@ services:
       QDRANT_HOST: qdrant
       QDRANT_PORT: "6333"
       QDRANT_GRPC_PORT: "6334"
+      QDRANT_PATH: ""
       GRADIO_HOST: "0.0.0.0"
       GRADIO_PORT: "7860"
     depends_on:

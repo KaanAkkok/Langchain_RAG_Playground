@@ -63,6 +63,7 @@ def build_app_services(graph_type: Literal["agentic", "workflow"]) -> AppService
         host=settings.QDRANT_HOST,
         port=settings.QDRANT_PORT,
         api_key=api_key,
+        path=settings.QDRANT_PATH or None,
     )
 
     try:

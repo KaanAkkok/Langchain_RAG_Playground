@@ -6,9 +6,10 @@ PDF dokümanlar üzerinde soru cevaplayan, kaynak gösteren bir **Agentic RAG** 
 
 | Araç | Not |
 |---|---|
-| [Docker](https://docs.docker.com/get-docker/) (Docker Compose dahil) | Uygulama ve Qdrant konteynerde çalışır |
-| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Testleri yerelde çalıştırmak için; Python 3.12'yi gerekirse kendisi indirir |
-| Gemini API anahtarı | [Google AI Studio](https://aistudio.google.com/apikey)|
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) veya pip | Bağımlılıkları kurmak ve uygulamayı çalıştırmak için |
+| Python 3.12+ | |
+| Docker (isteğe bağlı) | Qdrant sunucusunu konteynerde çalıştırmak için |
+| Gemini API anahtarı | [Google AI Studio](https://aistudio.google.com/apikey) |
 
 ## Kurulum
 
@@ -20,44 +21,74 @@ cd langchain_rag_playground
 # 2. Ortam değişkenlerini hazırla
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
 
-# 3. Testler için yerel bağımlılıkları kur (pytest dahil)
+# 3. uv kullanıyorsanız bağımlılıkları kurun (pytest dahil)
 uv sync
 ```
 
-`.env` dosyasını açıp en az `GEMINI_API_KEY` değerini gir. Diğer değerler varsayılan haliyle çalışır; Qdrant adresi konteyner içinde otomatik ayarlanır.
+`.env` dosyasını açıp en az `GEMINI_API_KEY` değerini girin.
+
+pip ile kurulum için:
+
+```bash
+python -m venv .venv
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# macOS/Linux:
+# source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
 ## Çalıştırma
+
+### uv veya pip + yerel Qdrant (Docker gerekmez)
+
+Yerel çalıştırmada Qdrant verileri `data/qdrant/` altında tutulur; Qdrant sunucusu veya Docker gerekmez.
+
+```bash
+uv run lang-rag-playground
+# pip ile kurulum yaptıysanız:
+lang-rag-playground
+```
+
+Tarayıcıda http://localhost:7860 adresini açın. `QDRANT_PATH` değerini değiştirerek veri klasörünü farklı bir konuma taşıyabilirsiniz.
+
+### Docker Compose (alternatif)
 
 ```bash
 docker compose up --build
 ```
 
-Bu komut uygulama imajını derler, Qdrant ve uygulamayı başlatır; loglar terminalde akar. Durdurmak için `Ctrl+C`. Kodda değişiklik yaptıktan sonra aynı komutu tekrar çalıştır; `--build` imajı yeni kodla yeniden derler. İlk derleme bağımlılıkları indirdiği için birkaç dakika sürer.
+Bu komut uygulama imajını derler, Qdrant ve uygulamayı başlatır; loglar terminalde akar. Durdurmak için `Ctrl+C`. Kodda değişiklik yaptıktan sonra aynı komutu tekrar çalıştırın; `--build` imajı yeni kodla yeniden derler.
 
-Arka planda çalıştırmak istersen `docker compose up -d --build`, logları izlemek için `docker compose logs -f app`.
+Arka planda çalıştırmak için `docker compose up -d --build`, logları izlemek için `docker compose logs -f app`.
 
-Tarayıcıda http://localhost:7860 adresini aç. PDF yükle ve soru sor. Arayüzden graph türünü seçebilirsin:
+Tarayıcıda http://localhost:7860 adresini açın. PDF yükleyin ve soru sorun. Arayüzden graph türünü seçebilirsiniz:
 - **workflow**: Akış sabittir; her bilgi sorusunda arama yapılır.
 - **agentic**: Asistan, arama aracını ne zaman ve hangi sorguyla çağıracağına kendisi karar verir.
 
-İlk çalıştırmada knowledge base boş olacağından dolayı önce PDF yükleyin ve ardından sorular sorun. PDF yükleme ve chunklama işlemi biraz zaman alabilir.
+İlk çalıştırmada knowledge base boş olacağından önce PDF yükleyin. PDF yükleme ve chunklama işlemi biraz zaman alabilir.
 
-Qdrant panosu: http://localhost:6333/dashboard
+Docker modu kullanılıyorsa Qdrant panosu: http://localhost:6333/dashboard
 
 ## Testler
 
 ```bash
 uv run pytest tests/exercises -q
+# veya pip ile kurulum yaptıysanız:
+python -m pytest tests/exercises -q
 ```
 
-Testler API anahtarı ve Qdrant gerektirmez. Lab görevleri ve tek görev çalıştırma için `docs/STUDENT_GUIDE.pdf` dosyasına bak.
+Testler API anahtarı ve Qdrant gerektirmez. Lab görevleri ve tek görev çalıştırma için `docs/STUDENT_GUIDE.pdf` dosyasına bakın.
 
 ## Değerlendirme (evaluation)
 
-`data/evaluation/` altındaki doküman ve ground truth seti ile retrieval metriklerini hesaplar. Yerelde çalışır ama Qdrant'a ihtiyaç duyar; önce `docker compose up -d qdrant` ile Qdrant'ı başlat:
+`data/evaluation/` altındaki doküman ve ground truth seti ile retrieval metriklerini hesaplar. Yerel Qdrant klasör modunda Docker olmadan çalışır:
 
 ```bash
 uv run python -m lang_rag_playground.evaluation.eval
+# veya pip ile kurulum yaptıysanız:
+python -m lang_rag_playground.evaluation.eval
 ```
 
 ## Proje yapısı
